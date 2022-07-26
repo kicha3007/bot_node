@@ -1,0 +1,5 @@
+.idea
+/pgdata
+/node_modules
+/dist
+.env
