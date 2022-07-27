@@ -2,32 +2,62 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
 }
 
-model User {
-    id          int      @id @default(autoincrement())
+model UserModel {
+    id          Int             @id @default(autoincrement())
     name        String
-    email       String
-    password    String
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @default(now())
+    email       String          @unique
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @default(now())
+    cart        CartModel?
+    contact     ContactModel?
 }
 
-model Product {
-    id          int      @id @default(autoincrement())
-    title       String
+model CartModel {
+    id          Int             @id @default(autoincrement())
+    user        UserModel       @relation(fields: [userId], references: [id])
+    userId      Int             @unique
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @default(now())
+    cartProducts CartProductModel[]
+}
+
+model ProductModel {
+    id          Int             @id @default(autoincrement())
+    title       String          @unique
     description String
     image       String
     size        String
-    hasHelium   Boolean  @default(false)
-    categoryId  String
-    creator     User
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @default(now())
+    hasHelium   Boolean         @default(false)
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @default(now())
+    cartProduct CartProductModel?
 }
+
+model CartProductModel {
+    id          Int             @id @default(autoincrement())
+    cart        CartModel       @relation(fields: [cartId], references: [id])
+    cartId      Int
+    product     ProductModel    @relation(fields: [productId], references: [id])
+    productId   Int             @unique
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @default(now())
+}
+
+model ContactModel {
+    id          Int             @id @default(autoincrement())
+    city        String
+    address     String
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @default(now())
+    user        UserModel       @relation(fields: [userId], references: [id])
+    userId      Int             @unique
+}
+
