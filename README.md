@@ -1,6 +1,7 @@
 # Бот магазина
 
 ## Установка
+- Запускаем `npm ci`
 - Копируем `.env.example` в `.env`
 - Добавляем ваши `TOKEN` и `DATABASE_URL` в `.env`
 - Запускаем `docker compose up -d`
