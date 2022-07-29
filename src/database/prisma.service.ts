@@ -21,7 +21,7 @@ export class PrismaService implements IPrismaService {
 			this.logger.log('[PrismaService] Успешо подключились к базе данных');
 		} catch (err) {
 			if (err instanceof Error) {
-				this.logger.error(`[PrismaService] Ошибка подключения к базе данных ${err.message}`);
+				throw new Error(`[PrismaService] Ошибка подключения к базе данных ${err.message}`);
 			}
 		}
 	}

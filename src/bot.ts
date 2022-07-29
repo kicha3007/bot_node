@@ -4,7 +4,6 @@ import { StartSceneController } from './start-scene/start-scene.controller';
 import LocalSession from 'telegraf-session-local';
 import { IMyContext } from './common/common.interface';
 import { ILogger } from './logger/logger.interface';
-import { IPrismaService } from './database/prisma.service.interface';
 import { SCENES_NAMES } from './constants';
 
 interface IBotProps {
@@ -12,7 +11,6 @@ interface IBotProps {
 	logger: ILogger;
 	startScene: StartSceneController;
 	stage: Scenes.Stage<IMyContext>;
-	databaseService: IPrismaService;
 }
 
 export class Bot {
@@ -21,14 +19,12 @@ export class Bot {
 	// TODO Временно any, пока не разберусь
 	startScene: any;
 	stage: Scenes.Stage<IMyContext>;
-	databaseService: IPrismaService;
 
-	constructor({ bot, logger, startScene, stage, databaseService }: IBotProps) {
+	constructor({ bot, logger, startScene, stage }: IBotProps) {
 		this.bot = bot;
 		this.logger = logger;
 		this.startScene = startScene;
 		this.stage = stage;
-		this.databaseService = databaseService;
 	}
 
 	reply(res: string): void {
@@ -43,8 +39,6 @@ export class Bot {
 		this.startScene.enter();
 		this.bot.command('start', (ctx) => ctx.scene.enter(SCENES_NAMES.START));
 		this.reply('Привет');
-
-		await this.databaseService.connect();
 
 		this.bot.launch();
 		this.logger.log('Бот инициализирован');

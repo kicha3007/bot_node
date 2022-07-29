@@ -7,7 +7,7 @@ import { ConfigService } from './config/config.service';
 import { ENV_NAMES, SCENES_NAMES } from './constants';
 import { PrismaService } from './database/prisma.service';
 
-async function bootstrap(): Promise<void> {
+const bootstrap = async (): Promise<void> => {
 	const loggerService = new LoggerService();
 	const configService = new ConfigService({ logger: loggerService });
 
@@ -17,6 +17,7 @@ async function bootstrap(): Promise<void> {
 	}
 
 	const prismaService = new PrismaService({ logger: loggerService });
+	await prismaService.connect();
 
 	const startScene = new Scenes.BaseScene<IMyContext>(SCENES_NAMES.START);
 	const stage = new Scenes.Stage<IMyContext>([startScene]);
@@ -26,9 +27,8 @@ async function bootstrap(): Promise<void> {
 		logger: loggerService,
 		startScene: new StartSceneController(startScene),
 		stage,
-		databaseService: prismaService,
 	});
 	bot.init();
-}
+};
 
 bootstrap();

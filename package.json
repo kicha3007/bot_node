@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "build": "tsc",
-    "start": "node ./dist/main.js",
+    "prebuild": "rimraf dist",
+    "start": "npm run build && node ./dist/main.js",
     "dev": "nodemon",
     "lint": "eslint ./src/**",
     "lint:fix": "eslint ./src/** --fix",
@@ -33,6 +34,7 @@
     "nodemon": "^2.0.19",
     "prettier": "^2.7.1",
     "prisma": "^4.1.0",
+    "rimraf": "^3.0.2",
     "ts-node": "^10.9.1",
     "tslog": "^3.3.3",
     "typescript": "^4.7.4"
