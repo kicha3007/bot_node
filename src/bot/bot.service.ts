@@ -23,24 +23,29 @@ export class BotService {
 		this.logger = logger;
 
 		const baseScene = new Scenes.BaseScene<IMyContext>(SCENES_NAMES.START);
-		this.startScene = new StartSceneController({ scene: baseScene });
+		this.startScene = new StartSceneController({ scene: baseScene, logger });
 		this.stage = new Scenes.Stage<IMyContext>([baseScene]);
-	}
-
-	reply(res: string): void {
-		this.bot.on('text', (ctx) => {
-			ctx.reply(res);
-		});
 	}
 
 	public async init(): Promise<void> {
 		this.bot.use(new LocalSession({ database: 'session.json' }).middleware());
 		this.bot.use(this.stage.middleware());
-		this.startScene.enter();
-		this.bot.command('start', (ctx) => ctx.scene.enter(SCENES_NAMES.START));
-		this.reply('Привет');
 
-		this.bot.launch();
-		this.logger.log('Бот инициализирован');
+		this.bot.command('start', (ctx) => {
+			ctx.scene.enter(SCENES_NAMES.START);
+		});
+
+		/*		this.bot.start(async (ctx) => {
+			await ctx.reply('Начать', Markup.keyboard(['test']).oneTime().resize());
+
+			// ctx.scene.enter(SCENES_NAMES.START);
+		});*/
+
+		try {
+			await this.bot.launch();
+			this.logger.log('Бот инициализирован');
+		} catch (err) {
+			this.logger.error(`[init] Ошибка запуска бота: ${err}`);
+		}
 	}
 }

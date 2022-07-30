@@ -31,6 +31,7 @@ model CartModel {
 
 model ProductModel {
     id          Int             @id @default(autoincrement())
+    price       Int
     title       String          @unique
     description String
     image       String

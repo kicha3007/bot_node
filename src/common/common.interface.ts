@@ -5,7 +5,7 @@ interface IMySessionScene extends Scenes.SceneSessionData {
 }
 
 interface IMySession extends Scenes.SceneSession<IMySessionScene> {
-	myProp: string;
+	currentStepName: string | null;
 }
 
 export interface IMyContext extends Context {
