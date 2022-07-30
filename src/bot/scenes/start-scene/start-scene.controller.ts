@@ -1,6 +1,6 @@
 import { Scenes } from 'telegraf';
-import { BaseController } from '../common/base.controller';
-import { IMyContext } from '../common/common.interface';
+import { BaseController } from '../../../common/base.controller';
+import { IMyContext } from '../../../common/common.interface';
 
 interface IStartSceneControllerProps {
 	scene: Scenes.BaseScene<IMyContext>;
