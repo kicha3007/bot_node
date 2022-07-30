@@ -1,0 +1,48 @@
+{
+  "name": "bot_node",
+  "version": "1.0.0",
+  "description": "Бот магазина с доставкой шариков для праздников.",
+  "main": "main.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "prebuild": "rimraf dist",
+    "start": "npm run build && node ./dist/main.js",
+    "dev": "nodemon",
+    "lint": "eslint ./src/**",
+    "lint:fix": "eslint ./src/** --fix",
+    "generate": "prisma generate",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kicheese/bot_node.git"
+  },
+  "author": "Sergey Kichigin",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kicheese/bot_node/issues"
+  },
+  "homepage": "https://github.com/kicheese/bot_node#readme",
+  "devDependencies": {
+    "@types/node": "^18.0.6",
+    "@typescript-eslint/eslint-plugin": "^5.31.0",
+    "@typescript-eslint/parser": "^5.31.0",
+    "eslint": "^8.20.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "nodemon": "^2.0.19",
+    "prettier": "^2.7.1",
+    "prisma": "^4.1.0",
+    "rimraf": "^3.0.2",
+    "ts-node": "^10.9.1",
+    "tslog": "^3.3.3",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "@prisma/client": "^4.1.0",
+    "dotenv": "^16.0.1",
+    "telegraf": "^4.8.5",
+    "telegraf-session-local": "^2.1.0"
+  }
+}

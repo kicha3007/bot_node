@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model UserModel {
+    id          Int             @id @default(autoincrement())
+    name        String
+    email       String          @unique
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @updatedAt
+    cart        CartModel?
+    contact     ContactModel?
+}
+
+model CartModel {
+    id          Int             @id @default(autoincrement())
+    user        UserModel       @relation(fields: [userId], references: [id])
+    userId      Int             @unique
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @updatedAt
+    cartProducts CartProductModel[]
+}
+
+model ProductModel {
+    id          Int             @id @default(autoincrement())
+    title       String          @unique
+    description String
+    image       String
+    size        String
+    hasHelium   Boolean         @default(false)
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @updatedAt
+    cartProduct CartProductModel?
+}
+
+model CartProductModel {
+    id          Int             @id @default(autoincrement())
+    cart        CartModel       @relation(fields: [cartId], references: [id])
+    cartId      Int
+    product     ProductModel    @relation(fields: [productId], references: [id])
+    productId   Int             @unique
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @updatedAt
+}
+
+model ContactModel {
+    id          Int             @id @default(autoincrement())
+    city        String
+    address     String
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @updatedAt
+    user        UserModel       @relation(fields: [userId], references: [id])
+    userId      Int             @unique
+}
+
