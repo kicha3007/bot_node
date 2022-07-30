@@ -1,10 +1,9 @@
-import { Telegraf, Scenes } from 'telegraf';
-import { Bot } from './bot';
+import { Telegraf } from 'telegraf';
+import { BotService } from './bot/bot.service';
 import { LoggerService } from './logger/logger.service';
-import { StartSceneController } from './start-scene/start-scene.controller';
 import { IMyContext } from './common/common.interface';
 import { ConfigService } from './config/config.service';
-import { ENV_NAMES, SCENES_NAMES } from './constants';
+import { ENV_NAMES } from './constants';
 import { PrismaService } from './database/prisma.service';
 
 const bootstrap = async (): Promise<void> => {
@@ -19,14 +18,9 @@ const bootstrap = async (): Promise<void> => {
 	const prismaService = new PrismaService({ logger: loggerService });
 	await prismaService.connect();
 
-	const startScene = new Scenes.BaseScene<IMyContext>(SCENES_NAMES.START);
-	const stage = new Scenes.Stage<IMyContext>([startScene]);
-
-	const bot = new Bot({
+	const bot = new BotService({
 		bot: new Telegraf<IMyContext>(token as string),
 		logger: loggerService,
-		startScene: new StartSceneController(startScene),
-		stage,
 	});
 	bot.init();
 };

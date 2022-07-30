@@ -1,30 +1,30 @@
 import 'dotenv/config';
 import { Telegraf, Scenes } from 'telegraf';
-import { StartSceneController } from './start-scene/start-scene.controller';
+import { StartSceneController } from '../start-scene/start-scene.controller';
 import LocalSession from 'telegraf-session-local';
-import { IMyContext } from './common/common.interface';
-import { ILogger } from './logger/logger.interface';
-import { SCENES_NAMES } from './constants';
+import { IMyContext } from '../common/common.interface';
+import { ILogger } from '../logger/logger.interface';
+import { SCENES_NAMES } from '../constants';
 
 interface IBotProps {
 	bot: Telegraf<IMyContext>;
 	logger: ILogger;
-	startScene: StartSceneController;
-	stage: Scenes.Stage<IMyContext>;
 }
 
-export class Bot {
+export class BotService {
 	bot: Telegraf<IMyContext>;
 	logger: ILogger;
 	// TODO Временно any, пока не разберусь
 	startScene: any;
 	stage: Scenes.Stage<IMyContext>;
 
-	constructor({ bot, logger, startScene, stage }: IBotProps) {
+	constructor({ bot, logger }: IBotProps) {
 		this.bot = bot;
 		this.logger = logger;
-		this.startScene = startScene;
-		this.stage = stage;
+
+		const baseScene = new Scenes.BaseScene<IMyContext>(SCENES_NAMES.START);
+		this.startScene = new StartSceneController({ scene: baseScene });
+		this.stage = new Scenes.Stage<IMyContext>([baseScene]);
 	}
 
 	reply(res: string): void {
