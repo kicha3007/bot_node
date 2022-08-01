@@ -1,7 +1,7 @@
 import { Scenes } from 'telegraf';
-import { BaseController } from '../common/base.controller';
-import { IMyContext } from '../common/common.interface';
-import { ILogger } from '../logger/logger.interface';
+import { BaseController } from '../../../common/base.controller';
+import { IMyContext } from '../../../common/common.interface';
+import { ILogger } from '../../../logger/logger.interface';
 
 const storySteps = {
 	introduction: {

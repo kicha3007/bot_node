@@ -1,14 +1,15 @@
 import 'dotenv/config';
 import { Telegraf, Scenes } from 'telegraf';
-import { StartSceneController } from '../start-scene/start-scene.controller';
+import { StartSceneController } from './scenes/start-scene/start-scene.controller';
 import LocalSession from 'telegraf-session-local';
 import { IMyContext } from '../common/common.interface';
 import { ILogger } from '../logger/logger.interface';
-import { SCENES_NAMES } from '../constants';
+import { ENV_NAMES, SCENES_NAMES } from '../constants';
+import { IConfigService } from '../config/config.service.interface';
 
 interface IBotProps {
-	bot: Telegraf<IMyContext>;
 	logger: ILogger;
+	configService: IConfigService;
 }
 
 export class BotService {
@@ -17,9 +18,11 @@ export class BotService {
 	// TODO Временно any, пока не разберусь
 	startScene: any;
 	stage: Scenes.Stage<IMyContext>;
+	token: string;
 
-	constructor({ bot, logger }: IBotProps) {
-		this.bot = bot;
+	constructor({ logger, configService }: IBotProps) {
+		this.token = configService.get(ENV_NAMES.TOKEN);
+		this.bot = new Telegraf<IMyContext>(this.token);
 		this.logger = logger;
 
 		const baseScene = new Scenes.BaseScene<IMyContext>(SCENES_NAMES.START);
@@ -28,6 +31,10 @@ export class BotService {
 	}
 
 	public async init(): Promise<void> {
+		if (!this.token) {
+			throw new Error('Не задан token');
+		}
+
 		this.bot.use(new LocalSession({ database: 'session.json' }).middleware());
 		this.bot.use(this.stage.middleware());
 
