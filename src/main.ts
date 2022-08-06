@@ -12,6 +12,7 @@ const bootstrap = async (): Promise<void> => {
 	const bot = new BotService({
 		logger: loggerService,
 		configService: new ConfigService({ logger: loggerService }),
+		prismaService,
 	});
 	bot.init();
 };

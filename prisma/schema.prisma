@@ -11,9 +11,8 @@ datasource db {
 }
 
 model UserModel {
-    id          Int             @id @default(autoincrement())
+    id          Int             @id @unique
     name        String
-    email       String          @unique
     createdAt   DateTime        @default(now())
     updatedAt   DateTime        @updatedAt
     cart        CartModel?
@@ -22,7 +21,7 @@ model UserModel {
 
 model CartModel {
     id          Int             @id @default(autoincrement())
-    user        UserModel       @relation(fields: [userId], references: [id])
+    user        UserModel       @relation(fields: [userId], references: [id], onDelete: Cascade)
     userId      Int             @unique
     createdAt   DateTime        @default(now())
     updatedAt   DateTime        @updatedAt
@@ -44,9 +43,9 @@ model ProductModel {
 
 model CartProductModel {
     id          Int             @id @default(autoincrement())
-    cart        CartModel       @relation(fields: [cartId], references: [id])
+    cart        CartModel       @relation(fields: [cartId], references: [id], onDelete: Cascade)
     cartId      Int
-    product     ProductModel    @relation(fields: [productId], references: [id])
+    product     ProductModel    @relation(fields: [productId], references: [id], onDelete: Cascade)
     productId   Int             @unique
     createdAt   DateTime        @default(now())
     updatedAt   DateTime        @updatedAt
@@ -58,7 +57,7 @@ model ContactModel {
     address     String
     createdAt   DateTime        @default(now())
     updatedAt   DateTime        @updatedAt
-    user        UserModel       @relation(fields: [userId], references: [id])
+    user        UserModel       @relation(fields: [userId], references: [id], onDelete: Cascade)
     userId      Int             @unique
 }
 

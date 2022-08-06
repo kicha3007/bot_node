@@ -1,5 +1,7 @@
+import { PrismaClient } from '@prisma/client';
+
 export interface IPrismaService {
-	client: unknown;
+	client: PrismaClient;
 	connect: () => void;
 	disconnect: () => void;
 }

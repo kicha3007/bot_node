@@ -2,120 +2,147 @@ import { Scenes } from 'telegraf';
 import { BaseController } from '../../../common/base.controller';
 import { IMyContext } from '../../../common/common.interface';
 import { ILogger } from '../../../logger/logger.interface';
-
-const storySteps = {
-	introduction: {
-		replies: [
-			{ type: 'text', message: 'Привет! Меня зовут Кевин.\n Мне 7 лет, и я застрял один дома' },
-			{ type: 'image', src: 'assets/sad-boy.png', message: 'следующие' },
-		],
-		buttons: [
-			{ text: 'Как ты оказался один?', nextStep: 'parents-go-away' },
-			{ text: 'А почему ты пишешь мне?', nextStep: 'found-you-contact' },
-		],
-	},
-	'parents-go-away': {
-		replies: [{ type: 'voice', src: 'assets/parents-forgot-me.wav', message: 'третий' }],
-	},
-	'found-you-contact': {
-		replies: [
-			{ type: 'text', message: 'Нашел твой номер в записной книжке.' },
-			{ type: 'text', message: 'Мне больше некому писать (((' },
-		],
-	},
-};
+import { IMarkupController } from '../../markup/markup.controller.interface';
+import { IContactsRepository } from '../../../contacts/contacts.repository.interface';
+import { IMarkupSteps } from '../../markup/markup.service.inteface';
+import { IUsersRepository } from '../../../users/users.repository.interface';
+import { STEPS_NAMES, CONTACTS_PROPS } from '../../../constants';
+import { Contact } from '../../../contacts/contact.entity';
+import { IBotService } from '../../bot.service.interface';
 
 interface IStartSceneControllerProps {
 	scene: Scenes.BaseScene<IMyContext>;
 	logger: ILogger;
+	markupController: IMarkupController;
+	contactsRepository: IContactsRepository;
+	usersRepository: IUsersRepository;
+	markup: IMarkupSteps;
+	sceneNames: string[];
+	bot: IBotService;
 }
 
 export class StartSceneController extends BaseController {
-	// TODO временно any
-	keyboards: any;
+	markupController: IMarkupController;
+	contactsRepository: IContactsRepository;
+	markup: IMarkupSteps;
+	sceneNames: string[];
+	usersRepository: IUsersRepository;
+	bot: IBotService;
 
-	constructor({ scene, logger }: IStartSceneControllerProps) {
-		super({ scene, logger });
+	constructor({
+		scene,
+		logger,
+		markupController,
+		contactsRepository,
+		usersRepository,
+		markup,
+		sceneNames,
+		bot,
+	}: IStartSceneControllerProps) {
+		super({ scene, logger, sceneNames });
+		this.bot = bot;
+		this.markupController = markupController;
+		this.markup = markup;
+		this.contactsRepository = contactsRepository;
+		this.usersRepository = usersRepository;
 
 		this.bindActions([
 			{ method: 'enter', func: this.start },
 			{ method: 'on', command: 'text', func: this.onAnswer },
-			/*	{ method: 'update', command: 'text', func: this.reply },*/
 		]);
 	}
 
-	protected getCurrentStepName(ctx: IMyContext): string {
-		if (!ctx.session?.currentStepName) {
-			ctx.session.currentStepName = 'introduction';
-		}
+	private async createUserIfNotCreate(ctx: IMyContext): Promise<void> {
+		const { id, username } = this.getCurrentUserInfo(ctx);
 
-		return ctx.session.currentStepName;
-	}
+		const hasUser = Boolean(await this.usersRepository.find({ id }));
 
-	protected setNextStep(ctx: IMyContext, nextStep: string | null): void {
-		if (ctx.session?.currentStepName) {
-			ctx.session.currentStepName = nextStep;
+		if (!hasUser) {
+			await this.usersRepository.create({ id, name: username });
 		}
 	}
 
-	protected getNextSiblingStep(currentStepName: string): string | null {
-		const stepsNames = Object.keys(storySteps);
-		const currentStepIndex = stepsNames.findIndex((stepName) => stepName === currentStepName);
-
-		const nextStepName = stepsNames[currentStepIndex + 1];
-
-		return nextStepName ?? null;
-	}
-
-	public async start(ctx: IMyContext): Promise<void> {
-		console.log('консоль стартовой сцены');
+	private async start(ctx: IMyContext): Promise<void> {
 		try {
-			const currentStepName = this.getCurrentStepName(ctx);
-			console.log('currentStepName', currentStepName);
-			// @ts-ignore
-			const { replies, buttons } = storySteps[currentStepName];
+			const currentStepName = this.getCurrentStepNameOrSetBaseName(ctx, STEPS_NAMES.SET_CITY);
 
-			for (const replItem of replies) {
-				console.log('replItem', replItem);
-				await ctx.reply(replItem.message);
-			}
-
-			/*			await ctx.replyWithHTML(
-				'Приветсвую в магазине гелевых шаров <b>GreenSharik </b>\n\n' +
-					'Все самое лучшее у нас, покупай, поторапливайся!',
-			);
-			const city = await ctx.reply('Введите ваш город');*/
-			/*		console.log('city', city);
-
-			// Explicit usage
-			ctx.telegram.answerCbQuery(ctx.callbackQuery.id);
-
-			// Using context shortcut
-			ctx.answerCbQuery();
-
-			const address = await ctx.reply('Введите ваш адрес');*/
+			this.markupController.createMarkup(ctx, this.markup[currentStepName]());
 		} catch (err) {
 			this.logger.error(`[StartSceneController] ${err}`);
 		}
 	}
 
-	public async onAnswer(ctx: IMyContext): Promise<void> {
-		const cbQuery = ctx.update;
-		console.log('cbQuery', cbQuery);
+	private async setOrRewriteContacts(ctx: IMyContext): Promise<void> {
+		await this.createUserIfNotCreate(ctx);
+		const city = this.getPropertyFromStorage({ ctx, property: CONTACTS_PROPS.CITY });
+		const address = this.getPropertyFromStorage({ ctx, property: CONTACTS_PROPS.ADDRESS });
 
-		/*		const currentStepName = await this.userSessionService.getUserStoryStep(userId);
-		const { buttons, replies } = storySteps[currentStepName];*/
+		const { id } = this.getCurrentUserInfo(ctx);
+		const userFromDatabase = await this.usersRepository.find({ id });
 
-		/*		const userAnswer = 'data' in cbQuery ? cbQuery.data : null;*/
+		try {
+			if (city && address && userFromDatabase) {
+				const { id: userId } = userFromDatabase;
 
-		console.log('curent_scene', this.scene);
+				const hasContactAlready = Boolean(await this.contactsRepository.find({ userId }));
 
-		const nextStep = this.getNextSiblingStep(this.getCurrentStepName(ctx));
+				if (hasContactAlready) {
+					await this.contactsRepository.delete({ userId });
+				}
 
-		this.setNextStep(ctx, nextStep);
+				const contact = new Contact(city, address, userId);
+				await this.contactsRepository.create(contact);
+			}
+		} catch (err) {
+			this.logger.error(`[setContacts] ${err}`);
+		}
+	}
 
-		await ctx.scene.reenter();
+	private saveContactsToStorage(ctx: IMyContext): void {
+		if (ctx.message) {
+			// TODO Разобраться в проблеме типизации text
 
-		/*	await ctx.reply('Ответ из реплая');*/
+			// @ts-ignore
+			const message = ctx.message.text;
+
+			const currentStepName = this.getCurrentStepName(ctx);
+
+			if (currentStepName === STEPS_NAMES.SET_CITY) {
+				this.savePropertyToStorage({ ctx, property: { [CONTACTS_PROPS.CITY]: message } });
+			}
+
+			if (currentStepName === STEPS_NAMES.SET_ADDRESS) {
+				this.savePropertyToStorage({ ctx, property: { [CONTACTS_PROPS.ADDRESS]: message } });
+			}
+		}
+	}
+
+	private async onAnswer(ctx: IMyContext): Promise<void> {
+		this.saveContactsToStorage(ctx);
+
+		const currentStepName = this.getCurrentStepName(ctx);
+
+		const nextStepName = await this.getNextSiblingStep({
+			ctx,
+			currentStepName,
+			stepsNames: this.markup,
+		});
+
+		if (this.getCurrentStepName(ctx) === STEPS_NAMES.SET_ADDRESS) {
+			await this.setOrRewriteContacts(ctx);
+		}
+
+		if (nextStepName) {
+			this.setNextStep(ctx, nextStepName);
+
+			await ctx.scene.reenter();
+		} else {
+			const nextSceneName = await this.getNextSceneName(ctx);
+
+			if (nextSceneName) {
+				this.setBaseStep(ctx);
+				await this.moveNextScene({ ctx, nextSceneName });
+			}
+		}
 	}
 }
