@@ -1,4 +1,4 @@
-import { IMyContext } from '../../common/common.interface';
+import { IMyContext } from '../common/common.interface';
 
 interface ISceneInfoItem {
 	message: string;

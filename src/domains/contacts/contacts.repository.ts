@@ -1,7 +1,7 @@
 import { IContactsRepository } from './contacts.repository.interface';
 import { Contact } from './contact.entity';
 import { ContactModel } from '@prisma/client';
-import { IPrismaService } from '../database/prisma.service.interface';
+import { IPrismaService } from '../../infrastructure/database/prisma.service.interface';
 
 export class ContactsRepository implements IContactsRepository {
 	constructor(private prismaService: IPrismaService) {}

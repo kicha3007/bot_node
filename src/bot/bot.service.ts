@@ -1,18 +1,18 @@
 import 'dotenv/config';
 import { Telegraf, Scenes } from 'telegraf';
 import LocalSession from 'telegraf-session-local';
-import { IMyContext } from '../common/common.interface';
-import { ILogger } from '../logger/logger.interface';
+import { IMyContext } from './common/common.interface';
+import { ILogger } from '../infrastructure/logger/logger.interface';
 import { ENV_NAMES, SCENES_NAMES } from '../constants';
-import { IConfigService } from '../config/config.service.interface';
+import { IConfigService } from '../infrastructure/config/config.service.interface';
 import { MarkupController } from './markup/markup.controller';
 import { CatalogSceneController } from './scenes/catalog-scene/catalog-scene.controller';
 import { StartSceneController } from './scenes/start-scene/start-scene.controller';
-import { IPrismaService } from '../database/prisma.service.interface';
+import { IPrismaService } from '../infrastructure/database/prisma.service.interface';
 import { MarkupService } from './markup/markup.service';
-import { ContactsRepository } from '../contacts/contacts.repository';
-import { ProductsRepository } from '../products/products.repository';
-import { UsersRepository } from '../users/users.repository';
+import { ContactsRepository } from '../domains/contacts/contacts.repository';
+import { ProductsRepository } from '../domains/products/products.repository';
+import { UsersRepository } from '../domains/users/users.repository';
 import { IBotService, ICreateScenesProps } from './bot.service.interface';
 
 interface IBotServiceProps {

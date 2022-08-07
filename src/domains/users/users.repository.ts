@@ -1,4 +1,4 @@
-import { IPrismaService } from '../database/prisma.service.interface';
+import { IPrismaService } from '../../infrastructure/database/prisma.service.interface';
 import { User } from './user.entity';
 import { UserModel } from '@prisma/client';
 import { IUsersRepository } from './users.repository.interface';

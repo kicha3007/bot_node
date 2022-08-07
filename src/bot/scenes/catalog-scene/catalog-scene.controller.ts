@@ -1,10 +1,10 @@
 import { Scenes } from 'telegraf';
-import { BaseController } from '../../../common/base.controller';
-import { IMyContext } from '../../../common/common.interface';
-import { ILogger } from '../../../logger/logger.interface';
+import { BaseController } from '../base-scene/base-scene.controller';
+import { IMyContext } from '../../common/common.interface';
+import { ILogger } from '../../../infrastructure/logger/logger.interface';
 import { IMarkupController } from '../../markup/markup.controller.interface';
 import { IMarkupSteps } from '../../markup/markup.service.inteface';
-import { IProductsRepository } from '../../../products/products.repository.interface';
+import { IProductsRepository } from '../../../domains/products/products.repository.interface';
 
 interface IStartSceneControllerProps {
 	scene: Scenes.BaseScene<IMyContext>;

@@ -1,6 +1,6 @@
-import { ILogger } from '../logger/logger.interface';
+import { ILogger } from '../infrastructure/logger/logger.interface';
 import { Scenes } from 'telegraf';
-import { IMyContext } from '../common/common.interface';
+import { IMyContext } from './common/common.interface';
 
 export interface ICreateScenesProps {
 	// TODO временно any, надо разобраться как типизировать

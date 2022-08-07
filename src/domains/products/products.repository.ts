@@ -1,6 +1,6 @@
 import { IProductsRepository } from './products.repository.interface';
 import { ProductModel } from '@prisma/client';
-import { IPrismaService } from '../database/prisma.service.interface';
+import { IPrismaService } from '../../infrastructure/database/prisma.service.interface';
 
 export class ProductsRepository implements IProductsRepository {
 	constructor(private prismaService: IPrismaService) {}

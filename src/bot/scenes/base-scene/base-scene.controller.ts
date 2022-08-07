@@ -1,9 +1,19 @@
 import { Scenes } from 'telegraf';
-import { IMyContext } from './common.interface';
-import { IHandler, IHandlerCommand } from './handlers.interface';
-import { ILogger } from '../logger/logger.interface';
-import { STEPS_NAMES } from '../constants';
-import { checkHasData, instanceOfType } from '../utils';
+import { IMyContext } from '../../common/common.interface';
+import { ILogger } from '../../../infrastructure/logger/logger.interface';
+import { STEPS_NAMES } from '../../../constants';
+import { checkHasData, instanceOfType } from '../../../utils';
+
+export interface IHandler {
+	method: 'enter' | 'leave';
+	func: (ctx: IMyContext) => void;
+}
+
+export interface IHandlerCommand {
+	method: 'on';
+	command: 'text' | 'text'[];
+	func: (ctx: IMyContext) => void;
+}
 
 interface IBaseControllerProps {
 	scene: Scenes.BaseScene<IMyContext>;

@@ -1,4 +1,4 @@
-import { IMyContext } from '../../common/common.interface';
+import { IMyContext } from '../common/common.interface';
 import { IMarkupController, ISceneInfo } from './markup.controller.interface';
 import { MARKUP_TYPES } from '../../constants';
 

@@ -1,13 +1,13 @@
 import { Scenes } from 'telegraf';
-import { BaseController } from '../../../common/base.controller';
-import { IMyContext } from '../../../common/common.interface';
-import { ILogger } from '../../../logger/logger.interface';
+import { BaseController } from '../base-scene/base-scene.controller';
+import { IMyContext } from '../../common/common.interface';
+import { ILogger } from '../../../infrastructure/logger/logger.interface';
 import { IMarkupController } from '../../markup/markup.controller.interface';
-import { IContactsRepository } from '../../../contacts/contacts.repository.interface';
+import { IContactsRepository } from '../../../domains/contacts/contacts.repository.interface';
 import { IMarkupSteps } from '../../markup/markup.service.inteface';
-import { IUsersRepository } from '../../../users/users.repository.interface';
+import { IUsersRepository } from '../../../domains/users/users.repository.interface';
 import { STEPS_NAMES, CONTACTS_PROPS } from '../../../constants';
-import { Contact } from '../../../contacts/contact.entity';
+import { Contact } from '../../../domains/contacts/contact.entity';
 
 interface IStartSceneControllerProps {
 	scene: Scenes.BaseScene<IMyContext>;
@@ -105,14 +105,19 @@ export class StartSceneController extends BaseController {
 					this.savePropertyToStorage({ ctx, property: { [CONTACTS_PROPS.CITY]: message } });
 				}
 
-			if (currentStepName === STEPS_NAMES.SET_ADDRESS) {
-				this.savePropertyToStorage({ ctx, property: { [CONTACTS_PROPS.ADDRESS]: message } });
+				if (currentStepName === STEPS_NAMES.SET_ADDRESS) {
+					this.savePropertyToStorage({ ctx, property: { [CONTACTS_PROPS.ADDRESS]: message } });
+				}
 			}
 		}
 	}
 
 	private async onAnswer(ctx: IMyContext): Promise<void> {
 		this.saveContactsToStorage(ctx);
+
+		this.scene.on('text', () => {
+			console.log('ffd');
+		});
 
 		const currentStepName = this.getCurrentStepName(ctx);
 
