@@ -13,6 +13,4 @@ export interface ICreateScenesProps {
 export interface IBotService {
 	createScenes: (scenes: ICreateScenesProps) => Scenes.BaseScene<IMyContext>[];
 	init: () => Promise<void>;
-	// TODO временно any, надо разобраться как типизировать
-	telegram?: any;
 }

@@ -73,7 +73,6 @@ export class BotService implements IBotService {
 				markup: markupService.getCurrentMarkup(sceneName),
 				scene,
 				sceneNames,
-				bot: this.bot,
 				...sceneValue.repository,
 			});
 

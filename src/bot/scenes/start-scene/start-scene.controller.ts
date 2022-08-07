@@ -8,7 +8,6 @@ import { IMarkupSteps } from '../../markup/markup.service.inteface';
 import { IUsersRepository } from '../../../users/users.repository.interface';
 import { STEPS_NAMES, CONTACTS_PROPS } from '../../../constants';
 import { Contact } from '../../../contacts/contact.entity';
-import { IBotService } from '../../bot.service.interface';
 
 interface IStartSceneControllerProps {
 	scene: Scenes.BaseScene<IMyContext>;
@@ -18,7 +17,6 @@ interface IStartSceneControllerProps {
 	usersRepository: IUsersRepository;
 	markup: IMarkupSteps;
 	sceneNames: string[];
-	bot: IBotService;
 }
 
 export class StartSceneController extends BaseController {
@@ -27,7 +25,6 @@ export class StartSceneController extends BaseController {
 	markup: IMarkupSteps;
 	sceneNames: string[];
 	usersRepository: IUsersRepository;
-	bot: IBotService;
 
 	constructor({
 		scene,
@@ -37,10 +34,8 @@ export class StartSceneController extends BaseController {
 		usersRepository,
 		markup,
 		sceneNames,
-		bot,
 	}: IStartSceneControllerProps) {
 		super({ scene, logger, sceneNames });
-		this.bot = bot;
 		this.markupController = markupController;
 		this.markup = markup;
 		this.contactsRepository = contactsRepository;

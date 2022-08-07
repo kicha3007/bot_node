@@ -5,7 +5,6 @@ import { ILogger } from '../../../logger/logger.interface';
 import { IMarkupController } from '../../markup/markup.controller.interface';
 import { IMarkupSteps } from '../../markup/markup.service.inteface';
 import { IProductsRepository } from '../../../products/products.repository.interface';
-import { IBotService } from '../../bot.service.interface';
 
 interface IStartSceneControllerProps {
 	scene: Scenes.BaseScene<IMyContext>;
@@ -13,7 +12,6 @@ interface IStartSceneControllerProps {
 	markupController: IMarkupController;
 	markup: IMarkupSteps;
 	productsRepository: IProductsRepository;
-	bot: IBotService;
 	sceneNames: string[];
 }
 
@@ -21,7 +19,6 @@ export class CatalogSceneController extends BaseController {
 	markupController: IMarkupController;
 	markup: IMarkupSteps;
 	productsRepository: IProductsRepository;
-	bot: IBotService;
 	sceneNames: string[];
 
 	constructor({
@@ -30,11 +27,9 @@ export class CatalogSceneController extends BaseController {
 		markupController,
 		markup,
 		productsRepository,
-		bot,
 		sceneNames,
 	}: IStartSceneControllerProps) {
 		super({ scene, logger, sceneNames });
-		this.bot = bot;
 		this.markupController = markupController;
 		this.markup = markup;
 		this.productsRepository = productsRepository;
@@ -61,12 +56,12 @@ export class CatalogSceneController extends BaseController {
 	private async showProduct(ctx: IMyContext): Promise<void> {
 		const product = await this.productsRepository.getProduct();
 
-		if (product) {
+		if (product && ctx.chat?.id) {
 			const viewProduct = `<b>${product.title}</b>\n\nЦена:<i>${product.price}</i>\n\n${product.description}`;
 
-			await this.bot.telegram.sendPhoto(ctx.chat?.id, product.image, {
+			await ctx.telegram.sendPhoto(ctx.chat.id, product.image, {
 				caption: viewProduct,
-				parse_mode: 'html',
+				parse_mode: 'HTML',
 			});
 		}
 	}
