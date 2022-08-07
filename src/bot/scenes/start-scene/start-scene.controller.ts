@@ -95,16 +95,15 @@ export class StartSceneController extends BaseController {
 
 	private saveContactsToStorage(ctx: IMyContext): void {
 		if (ctx.message) {
-			// TODO Разобраться в проблеме типизации text
+			// TODO Пока так решил проблему с типизацией text в message
+			const message = 'text' in ctx.message && ctx.message.text;
 
-			// @ts-ignore
-			const message = ctx.message.text;
+			if (message) {
+				const currentStepName = this.getCurrentStepName(ctx);
 
-			const currentStepName = this.getCurrentStepName(ctx);
-
-			if (currentStepName === STEPS_NAMES.SET_CITY) {
-				this.savePropertyToStorage({ ctx, property: { [CONTACTS_PROPS.CITY]: message } });
-			}
+				if (currentStepName === STEPS_NAMES.SET_CITY) {
+					this.savePropertyToStorage({ ctx, property: { [CONTACTS_PROPS.CITY]: message } });
+				}
 
 			if (currentStepName === STEPS_NAMES.SET_ADDRESS) {
 				this.savePropertyToStorage({ ctx, property: { [CONTACTS_PROPS.ADDRESS]: message } });
