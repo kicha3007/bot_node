@@ -1,8 +1,12 @@
 import { IMyContext } from './common.interface';
 
-export interface IHandlers {
-	method: 'enter' | 'leave' | 'on';
-	// TODO разобраться ка кэто типизировать
-	command?: any;
+export interface IHandler {
+	method: 'enter' | 'leave';
+	func: (ctx: IMyContext) => void;
+}
+
+export interface IHandlerCommand {
+	method: 'on';
+	command: 'text' | 'text'[];
 	func: (ctx: IMyContext) => void;
 }

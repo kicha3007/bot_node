@@ -1,9 +1,9 @@
 import { Scenes } from 'telegraf';
 import { IMyContext } from './common.interface';
-import { IHandlers } from './handlers.interface';
+import { IHandler, IHandlerCommand } from './handlers.interface';
 import { ILogger } from '../logger/logger.interface';
 import { STEPS_NAMES } from '../constants';
-import { checkHasData } from '../utils';
+import { checkHasData, instanceOfType } from '../utils';
 
 interface IBaseControllerProps {
 	scene: Scenes.BaseScene<IMyContext>;
@@ -145,14 +145,13 @@ export abstract class BaseController {
 		return ctx.from as { id: number; username: string };
 	}
 
-	protected bindActions(actions: IHandlers[]): void {
+	protected bindActions(actions: Array<IHandler | IHandlerCommand>): void {
 		for (const action of actions) {
 			const handler = action.func.bind(this);
-			if (action.command) {
+
+			if (instanceOfType<IHandlerCommand>(action, 'command')) {
 				this.scene[action.method](action.command, handler);
 			} else {
-				/*				TODO разобраться как это типизировать
-				@ts-ignore*/
 				this.scene[action.method](handler);
 			}
 		}
