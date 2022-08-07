@@ -5,7 +5,7 @@ export interface IMarkupSteps {
 }
 
 export interface IMarkup {
-	[key: string]: any;
+	[key: string]: IMarkupSteps;
 }
 
 export interface IMarkupService {
