@@ -1,3 +1,5 @@
+//TODO временно закоментирован
+
 /*
 export class Product {
 	constructor(
