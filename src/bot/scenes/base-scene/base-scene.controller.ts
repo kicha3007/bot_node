@@ -3,46 +3,15 @@ import { IMyContext } from '../../common/common.interface';
 import { ILogger } from '../../../infrastructure/logger/logger.interface';
 import { STEPS_NAMES } from '../../../constants';
 import { checkHasData, instanceOfType } from '../../../utils';
-
-export interface IHandler {
-	method: 'enter' | 'leave';
-	func: (ctx: IMyContext) => void;
-}
-
-export interface IHandlerCommand {
-	method: 'on';
-	command: 'text' | 'text'[];
-	func: (ctx: IMyContext) => void;
-}
-
-interface IBaseControllerProps {
-	scene: Scenes.BaseScene<IMyContext>;
-	logger: ILogger;
-	sceneNames: string[];
-}
-
-interface IGetNextSiblingStep {
-	currentStepName: string;
-	stepsNames: string[] | object;
-	ctx: IMyContext;
-}
-
-interface IMoveNextScene {
-	ctx: IMyContext;
-	nextSceneName: string;
-}
-
-interface ISavePropertyToStorage {
-	ctx: IMyContext;
-	property: {
-		[key: string]: string;
-	};
-}
-
-interface IGetPropertyFromStorage {
-	ctx: IMyContext;
-	property: string;
-}
+import {
+	IGetPropertyFromStorage,
+	ISavePropertyToStorage,
+	IMoveNextScene,
+	IGetNextSiblingStep,
+	IBaseControllerProps,
+	IHandlerCommand,
+	IHandler,
+} from './base-scene.interface';
 
 export abstract class BaseController {
 	protected readonly scene: Scenes.BaseScene<IMyContext>;
@@ -53,10 +22,6 @@ export abstract class BaseController {
 		this.scene = scene;
 		this.logger = logger;
 		this.sceneNames = sceneNames;
-	}
-
-	sendErrorCode(err: Error): void {
-		throw err;
 	}
 
 	protected getPropertyFromStorage = ({
