@@ -1,7 +1,7 @@
 import { BotService } from './bot/bot.service';
-import { LoggerService } from './logger/logger.service';
-import { ConfigService } from './config/config.service';
-import { PrismaService } from './database/prisma.service';
+import { LoggerService } from './infrastructure/logger/logger.service';
+import { ConfigService } from './infrastructure/config/config.service';
+import { PrismaService } from './infrastructure/database/prisma.service';
 
 const bootstrap = async (): Promise<void> => {
 	const loggerService = new LoggerService();
@@ -12,6 +12,7 @@ const bootstrap = async (): Promise<void> => {
 	const bot = new BotService({
 		logger: loggerService,
 		configService: new ConfigService({ logger: loggerService }),
+		prismaService,
 	});
 	bot.init();
 };

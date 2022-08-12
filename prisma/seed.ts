@@ -4,32 +4,51 @@ const prisma = new PrismaClient();
 
 const userInfo = {
 	name: 'Иван',
-	email: 'ivanov@test.ru',
+	id: 1,
 };
 
 const productsList = [
 	{
-		title: 'Первый товар',
-		description: 'Описание товара',
-		image: '',
+		title: 'Шарик 1',
+		price: 100,
+		description: 'Описание шарика 1',
+		image: 'https://megashar-nsk.ru/images/gelievye_shary/2021/gelievue-shary2021-2.jpg',
 		size: 's',
 	},
 	{
-		title: 'Второй товар',
-		description: 'Описание товара',
-		image: '',
+		title: 'Шарик 2',
+		price: 300,
+		description: 'Описание шарика 2',
+		image:
+			'https://84.img.avito.st/image/1/1.GTXVcba6tdzj2HfZ61VTayfSs9hhUr0eZNKx1GHatw.QCwhmlW15b3YaWgq-C09OvE-5VJHN7AKhQgEZhXP95U',
 		size: 'm',
 	},
 	{
-		title: 'Третий товар',
+		title: 'Шарик 3',
+		price: 400,
+		description: 'Описание шарика 3',
+		image: 'https://i.pinimg.com/originals/64/4f/55/644f551289e01fdf9e4a05172bf373b4.jpg',
+		size: 's',
+	},
+	{
+		title: 'Шарик 4',
+		price: 400,
+		description: 'Описание шарика 4',
+		image:
+			'https://shop-cdn1.vigbo.tech/shops/46256//products/14365412/images/2-f45526fa9644dba03ab9d49703102a35.jpg?version=undefined',
+		size: 's',
+	},
+	{
+		title: 'Шарик 5',
+		price: 400,
 		description: 'Описание товара',
-		image: '',
+		image: 'https://st.shop-serpantin.ru/8/2503/238/tOod87GfeHY.jpg',
 		size: 's',
 	},
 ];
 
 interface ICreateUserProps {
-	user: Pick<UserModel, 'name' | 'email'>;
+	user: Pick<UserModel, 'name' | 'id'>;
 }
 
 const createUser = async ({ user }: ICreateUserProps): Promise<UserModel> => {
@@ -45,7 +64,7 @@ const createCart = async ({ cart }: ICreateCartProps): Promise<CartModel> => {
 };
 
 interface ICreateProductProps {
-	products: Array<Pick<ProductModel, 'title' | 'description' | 'image' | 'size'>>;
+	products: Array<Pick<ProductModel, 'title' | 'description' | 'image' | 'size' | 'price'>>;
 }
 
 const createProducts = async ({ products }: ICreateProductProps): Promise<void> => {
@@ -81,13 +100,15 @@ const createContact = async ({ contact }: ICreateContact): Promise<void> => {
 const main = async (): Promise<void> => {
 	await prisma.$connect();
 
-	const createdUser = await createUser({ user: userInfo });
+	//TODO пока закомментировал добавление всех остальных данных в бд, кроме продуктов, в целях удобства разработки
+
+	/*	const createdUser = await createUser({ user: userInfo });
 
 	const cart = { userId: createdUser.id };
-	const createdCart = await createCart({ cart });
+	const createdCart = await createCart({ cart });*/
 
 	await createProducts({ products: productsList });
-	const createdProducts = await getProducts();
+	/*const createdProducts = await getProducts();
 	await fillCartProducts({ products: createdProducts, cartId: createdCart.id });
 
 	const contact = {
@@ -95,7 +116,7 @@ const main = async (): Promise<void> => {
 		address: 'Шикарная 10 стр 3',
 		userId: createdUser.id,
 	};
-	await createContact({ contact });
+	await createContact({ contact });*/
 
 	await prisma.$disconnect();
 };
