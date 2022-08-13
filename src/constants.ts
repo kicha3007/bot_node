@@ -16,6 +16,7 @@ export enum STEPS_NAMES {
 export enum MESSAGES {
 	SET_YOUR_CITY = 'Введите ваш город',
 	SET_YOUR_ADDRESS = 'Введите адрес',
+	MY_ORDERS = 'Мои заказы',
 }
 
 export enum CONTACTS_PROPS {

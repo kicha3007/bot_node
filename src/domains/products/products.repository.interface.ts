@@ -1,6 +1,12 @@
 import { ProductModel } from '@prisma/client';
 
+export interface IGetProductsParams {
+	skip?: number;
+	take?: number;
+}
+
+export type getProductsReturn = Promise<ProductModel[] | []>;
+
 export interface IProductsRepository {
-	getAll: () => Promise<ProductModel[]>;
-	getProduct: () => Promise<ProductModel | null>;
+	getProducts: (params?: IGetProductsParams) => getProductsReturn;
 }

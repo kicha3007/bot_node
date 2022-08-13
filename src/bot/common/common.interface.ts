@@ -5,9 +5,10 @@ interface IMySessionScene extends Scenes.SceneSessionData {
 }
 
 interface IMySession extends Scenes.SceneSession<IMySessionScene> {
-	currentStepName: string;
-	city: string;
-	address: string;
+	currentStepName?: string;
+	city?: string;
+	address?: string;
+	productMessageId?: number;
 }
 
 export interface IMyContext extends Context {

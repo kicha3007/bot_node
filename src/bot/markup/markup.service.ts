@@ -54,7 +54,7 @@ export class MarkupService implements IMarkupService {
 						buttons: {
 							title: 'Навигация',
 							items: [
-								['Мои заказы', 'Каталог товаров'],
+								[MESSAGES.MY_ORDERS, 'Каталог товаров'],
 								['Доставка', 'FAQ'],
 							],
 						},

@@ -4,14 +4,14 @@ import { ILogger } from '../../../infrastructure/logger/logger.interface';
 import { STEPS_NAMES } from '../../../constants';
 import { checkHasData, instanceOfType } from '../../../utils';
 
-export interface IHandler {
+export interface IHandlerBase {
 	method: 'enter' | 'leave';
 	func: (ctx: IMyContext) => void;
 }
 
-export interface IHandlerCommand {
+export interface IHandlerAction {
 	method: 'on';
-	command: 'text' | 'text'[];
+	action: 'text' | 'text'[];
 	func: (ctx: IMyContext) => void;
 }
 
@@ -32,11 +32,16 @@ interface IMoveNextScene {
 	nextSceneName: string;
 }
 
+interface ISavePropertyToStorageProperty {
+	currentStepName?: string;
+	city?: string;
+	address?: string;
+	productMessageId?: number;
+}
+
 interface ISavePropertyToStorage {
 	ctx: IMyContext;
-	property: {
-		[key: string]: string;
-	};
+	property: ISavePropertyToStorageProperty;
 }
 
 interface IGetPropertyFromStorage {
@@ -55,29 +60,22 @@ export abstract class BaseController {
 		this.sceneNames = sceneNames;
 	}
 
-	sendErrorCode(err: Error): void {
-		throw err;
-	}
-
 	protected getPropertyFromStorage = ({
 		ctx,
 		property,
-	}: IGetPropertyFromStorage): string | undefined => {
-		// TODO подумать как улучшить типизацию
-		if (property === 'city' || property === 'address') {
-			const currentProperty = ctx.session[property];
-			//TODO перепроверить правильность отлова ошибок
-			try {
-				checkHasData({
-					data: currentProperty,
-					message: `[getPropertyFromStorage] Ошибка получения свойства ${property}`,
-				});
+	}: IGetPropertyFromStorage): string | number | undefined => {
+		try {
+			const currentProperty = ctx.session[property as keyof ISavePropertyToStorageProperty];
 
-				return ctx.session[property];
-			} catch (err) {
-				if (err instanceof Error) {
-					this.logger.error(err);
-				}
+			checkHasData({
+				data: currentProperty,
+				message: `[getPropertyFromStorage] Ошибка получения свойства ${property}`,
+			});
+
+			return currentProperty;
+		} catch (err) {
+			if (err instanceof Error) {
+				this.logger.error(err);
 			}
 		}
 	};
@@ -85,10 +83,7 @@ export abstract class BaseController {
 	protected savePropertyToStorage = ({ ctx, property }: ISavePropertyToStorage): void => {
 		const [[key, value]] = Object.entries(property);
 
-		// TODO подумать как улучшить типизацию
-		if (key === 'city' || key === 'address') {
-			ctx.session[key] = value;
-		}
+		ctx.session[key as keyof ISavePropertyToStorageProperty] = value;
 	};
 
 	protected setBaseStep = (ctx: IMyContext, name: string = STEPS_NAMES.BASE_STEP): void => {
@@ -96,7 +91,7 @@ export abstract class BaseController {
 	};
 
 	protected getCurrentStepName(ctx: IMyContext): string {
-		return ctx.session.currentStepName;
+		return ctx.session?.currentStepName || '';
 	}
 
 	protected getCurrentStepNameOrSetBaseName(ctx: IMyContext, name: string): string {
@@ -155,12 +150,12 @@ export abstract class BaseController {
 		return ctx.from as { id: number; username: string };
 	}
 
-	protected bindActions(actions: Array<IHandler | IHandlerCommand>): void {
+	protected bindActions(actions: Array<IHandlerBase | IHandlerAction>): void {
 		for (const action of actions) {
 			const handler = action.func.bind(this);
 
-			if (instanceOfType<IHandlerCommand>(action, 'command')) {
-				this.scene[action.method](action.command, handler);
+			if (instanceOfType<IHandlerAction>(action, 'action')) {
+				this.scene[action.method](action.action, handler);
 			} else {
 				this.scene[action.method](handler);
 			}

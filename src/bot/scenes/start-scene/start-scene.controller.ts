@@ -43,7 +43,7 @@ export class StartSceneController extends BaseController {
 
 		this.bindActions([
 			{ method: 'enter', func: this.start },
-			{ method: 'on', command: 'text', func: this.onAnswer },
+			{ method: 'on', action: 'text', func: this.onAnswer },
 		]);
 	}
 
@@ -85,7 +85,7 @@ export class StartSceneController extends BaseController {
 					await this.contactsRepository.delete({ userId });
 				}
 
-				const contact = new Contact(city, address, userId);
+				const contact = new Contact(city as string, address as string, userId);
 				await this.contactsRepository.create(contact);
 			}
 		} catch (err) {
