@@ -1,10 +1,10 @@
 import { SCENES_NAMES, MESSAGES, STEPS_NAMES } from '../../constants';
-import { IMarkupService, IMarkup, IMarkupSteps } from './markup.service.inteface';
+import { IMarkupService, type Markup, IMarkupSteps } from './markup.service.inteface';
 import { ISceneInfo } from './markup.controller.interface';
 import { MARKUP_TYPES } from '../../constants';
 
 export class MarkupService implements IMarkupService {
-	markup(): IMarkup {
+	markup(): Markup {
 		return {
 			[SCENES_NAMES.START]: {
 				// TODO сделано функциями, так как возможно сюда буду
@@ -65,12 +65,12 @@ export class MarkupService implements IMarkupService {
 	}
 
 	getCurrentMarkup(currentSceneName: string): IMarkupSteps {
-		const markup: IMarkup = this.markup();
+		const markup: Markup = this.markup();
 		return markup[currentSceneName];
 	}
 
 	getSceneNames(): string[] {
-		const markup: IMarkup = this.markup();
+		const markup: Markup = this.markup();
 		return Object.keys(markup);
 	}
 }

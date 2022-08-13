@@ -1,23 +1,12 @@
-import { Scenes } from 'telegraf';
 import { BaseController } from '../base-scene/base-scene.controller';
 import { IMyContext } from '../../common/common.interface';
-import { ILogger } from '../../../infrastructure/logger/logger.interface';
 import { IMarkupController } from '../../markup/markup.controller.interface';
 import { IContactsRepository } from '../../../domains/contacts/contacts.repository.interface';
 import { IMarkupSteps } from '../../markup/markup.service.inteface';
 import { IUsersRepository } from '../../../domains/users/users.repository.interface';
 import { STEPS_NAMES, CONTACTS_PROPS } from '../../../constants';
 import { Contact } from '../../../domains/contacts/contact.entity';
-
-interface IStartSceneControllerProps {
-	scene: Scenes.BaseScene<IMyContext>;
-	logger: ILogger;
-	markupController: IMarkupController;
-	contactsRepository: IContactsRepository;
-	usersRepository: IUsersRepository;
-	markup: IMarkupSteps;
-	sceneNames: string[];
-}
+import { IStartSceneControllerProps } from './start-scene.interface';
 
 export class StartSceneController extends BaseController {
 	markupController: IMarkupController;

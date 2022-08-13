@@ -1,9 +1,9 @@
-import { Scenes } from 'telegraf';
 import { BaseController } from '../base-scene/base-scene.controller';
 import { IMyContext } from '../../common/common.interface';
-import { ILogger } from '../../../infrastructure/logger/logger.interface';
 import { IMarkupController } from '../../markup/markup.controller.interface';
 import { IMarkupSteps } from '../../markup/markup.service.inteface';
+import { IProductsRepository } from '../../../domains/products/products.repository.interface';
+import { ICatalogSceneControllerProps } from './catalog-scene.interface';
 import {
 	IProductsRepository,
 	IGetProductsParams,
@@ -46,7 +46,7 @@ export class CatalogSceneController extends BaseController {
 		markup,
 		productsRepository,
 		sceneNames,
-	}: IStartSceneControllerProps) {
+	}: ICatalogSceneControllerProps) {
 		super({ scene, logger, sceneNames });
 		this.markupController = markupController;
 		this.markup = markup;
