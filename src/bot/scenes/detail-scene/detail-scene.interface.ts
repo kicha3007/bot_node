@@ -2,18 +2,16 @@ import { Scenes } from 'telegraf';
 import { IMyContext } from '../../common/common.interface';
 import { ILogger } from '../../../infrastructure/logger/logger.interface';
 import { IMarkupController } from '../../markup/markup.controller.interface';
-import { IContactsRepository } from '../../../domains/contacts/contacts.repository.interface';
-import { IUsersRepository } from '../../../domains/users/users.repository.interface';
 import { IMarkupSteps } from '../../markup/markup.service.inteface';
-import { ICartRepository } from '../../../domains/cart/cart.repository.interface';
+import { IProductsRepository } from '../../../domains/products/products.repository.interface';
+import { IUsersRepository } from '../../../domains/users/users.repository.interface';
 
-export interface IStartSceneControllerProps {
+export interface IDetailSceneProps {
 	scene: Scenes.BaseScene<IMyContext>;
 	logger: ILogger;
 	markupController: IMarkupController;
-	contactsRepository: IContactsRepository;
-	usersRepository: IUsersRepository;
-	cartRepository: ICartRepository;
 	markup: IMarkupSteps;
+	productsRepository: IProductsRepository;
+	usersRepository: IUsersRepository;
 	sceneNames: string[];
 }

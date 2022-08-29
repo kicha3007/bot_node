@@ -1,7 +1,6 @@
-import { SCENES_NAMES, MESSAGES, STEPS_NAMES } from '../../constants';
-import { IMarkupService, type Markup, IMarkupSteps } from './markup.service.inteface';
-import { ISceneInfo } from './markup.controller.interface';
-import { MARKUP_TYPES } from '../../constants';
+import { MARKUP_TYPES, MESSAGES, SCENES_NAMES, STEPS_NAMES } from '../../constants';
+import { IMarkupService, IMarkupSteps, type Markup } from './markup.service.inteface';
+import { InlineButtonsMode, ISceneInfo } from './markup.controller.interface';
 
 export class MarkupService implements IMarkupService {
 	markup(): Markup {
@@ -29,33 +28,133 @@ export class MarkupService implements IMarkupService {
 				},
 			},
 			[SCENES_NAMES.CATALOG]: {
-				[STEPS_NAMES.BASE_STEP]: (): ISceneInfo => {
+				[STEPS_NAMES.BASE_STEP]: ({
+					countMessage = '',
+					caption = '',
+					image = '',
+					mode = 'create',
+					messageId,
+				} = {}): ISceneInfo => {
 					return {
 						inlineButtons: {
-							title: 'каталог',
+							type: 'photo',
+							mode: mode as InlineButtonsMode,
+							info: { caption, image },
+							messageId,
 							items: [
 								[
 									{
-										message: 'PREV',
-										callback: 'prev',
+										message: MESSAGES.DETAIL_DESCRIPTION,
+										callback: MESSAGES.DETAIL_DESCRIPTION,
 									},
-									{ message: 'count', callback: 'count' },
-									{ message: 'NEXT', callback: 'f' },
+								],
+								[
+									{
+										message: MESSAGES.PREV,
+										callback: MESSAGES.PREV,
+									},
+									{ message: countMessage, callback: 'count' },
+									{ message: MESSAGES.NEXT, callback: MESSAGES.NEXT },
 								],
 								[
 									{
 										message: 'Назад',
 										callback: 'back',
 									},
-									{ message: 'В корзину', callback: 'inCart' },
+									{ message: MESSAGES.ADD_TO_CART, callback: MESSAGES.ADD_TO_CART },
 								],
 							],
 						},
+					};
+				},
+				[STEPS_NAMES.SET_BUTTONS]: (): ISceneInfo => {
+					return {
 						buttons: {
 							title: 'Навигация',
 							items: [
-								[MESSAGES.MY_ORDERS, 'Каталог товаров'],
+								[MESSAGES.MY_ORDERS, MESSAGES.CATALOG],
 								['Доставка', 'FAQ'],
+							],
+						},
+					};
+				},
+			},
+			[SCENES_NAMES.DETAIL]: {
+				[STEPS_NAMES.BASE_STEP]: ({
+					caption = '',
+					image = '',
+					mode = 'edit',
+					messageId,
+				} = {}): ISceneInfo => {
+					return {
+						inlineButtons: {
+							type: 'photo',
+							mode: mode as InlineButtonsMode,
+							info: { caption, image },
+							messageId,
+							items: [
+								[
+									{
+										message: MESSAGES.BACK_TO_CATALOG,
+										callback: MESSAGES.BACK_TO_CATALOG,
+									},
+								],
+							],
+						},
+					};
+				},
+			},
+			[SCENES_NAMES.CART]: {
+				[STEPS_NAMES.BASE_STEP]: ({
+					countMessage = '',
+					caption = '',
+					image = '',
+					mode = 'create',
+					messageId,
+					productSum,
+					productCount,
+					messagePay,
+				} = {}): ISceneInfo => {
+					return {
+						inlineButtons: {
+							type: 'photo',
+							mode: mode as InlineButtonsMode,
+							info: { caption, image },
+							messageId,
+							items: [
+								[
+									{
+										message: productSum,
+										callback: MESSAGES.PRODUCT_SUM,
+									},
+								],
+								[
+									{
+										message: MESSAGES.REMOVE_PRODUCT,
+										callback: MESSAGES.REMOVE_PRODUCT,
+									},
+									{
+										message: MESSAGES.DECREMENT_PRODUCT_COUNT,
+										callback: MESSAGES.DECREMENT_PRODUCT_COUNT,
+									},
+									{
+										message: productCount,
+										callback: MESSAGES.CURRENT_PRODUCT_COUNT,
+									},
+									{
+										message: MESSAGES.INCREMENT_PRODUCT_COUNT,
+										callback: MESSAGES.INCREMENT_PRODUCT_COUNT,
+									},
+								],
+								[
+									{
+										message: MESSAGES.PREV,
+										callback: MESSAGES.PREV,
+									},
+									{ message: countMessage, callback: MESSAGES.ALL_PRODUCTS_COUNT },
+									{ message: MESSAGES.NEXT, callback: MESSAGES.NEXT },
+								],
+								[{ message: messagePay, callback: MESSAGES.TO_PAY }],
 							],
 						},
 					};

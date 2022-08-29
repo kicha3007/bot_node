@@ -5,7 +5,7 @@ interface ICheckHasData {
 
 const DEFAULT_MESSAGE = 'данные не найдены';
 export const checkHasData = ({ data, message = DEFAULT_MESSAGE }: ICheckHasData): void => {
-	if (!data) {
+	if (!data && typeof data !== 'number') {
 		throw new Error(message);
 	}
 };

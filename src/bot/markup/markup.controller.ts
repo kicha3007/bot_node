@@ -1,10 +1,17 @@
 import { IMyContext } from '../common/common.interface';
-import { IMarkupController, ISceneInfo } from './markup.controller.interface';
+import {
+	IMarkupController,
+	ISceneInfo,
+	type CreateMarkupReturn,
+} from './markup.controller.interface';
 import { MARKUP_TYPES } from '../../constants';
+import { Message } from 'telegraf/src/core/types/typegram';
 
 export class MarkupController implements IMarkupController {
-	async createMarkup(ctx: IMyContext, sceneInfo: ISceneInfo): Promise<void> {
+	async createMarkup(ctx: IMyContext, sceneInfo: ISceneInfo): CreateMarkupReturn {
 		const { replies, buttons, inlineButtons } = sceneInfo;
+
+		let message: null | Message.PhotoMessage = null;
 
 		if (replies) {
 			for (const repl of replies) {
@@ -17,18 +24,60 @@ export class MarkupController implements IMarkupController {
 		}
 
 		if (inlineButtons) {
-			const buttonsGroup = inlineButtons.items.map((innerButtons) => {
+			const { type, info, mode, items, messageId } = inlineButtons;
+
+			const buttonsGroup = items.map((innerButtons) => {
 				return innerButtons.map((button) => ({
 					text: button.message,
 					callback_data: button.callback,
 				}));
 			});
 
-			await ctx.reply(inlineButtons.title, {
-				reply_markup: {
-					inline_keyboard: buttonsGroup,
-				},
-			});
+			const { image, caption, title } = info;
+
+			if (mode === 'create') {
+				if (type === 'photo') {
+					if (ctx.chat?.id && image) {
+						message = await ctx.telegram.sendPhoto(ctx.chat.id, image, {
+							caption,
+							parse_mode: 'HTML',
+							reply_markup: {
+								inline_keyboard: buttonsGroup,
+							},
+						});
+					}
+				} else {
+					if (title) {
+						await ctx.reply(title, {
+							reply_markup: {
+								inline_keyboard: buttonsGroup,
+							},
+						});
+					}
+				}
+			} else {
+				if (type === 'photo') {
+					if (ctx.chat?.id && image && messageId) {
+						console.log('messageId!!!', messageId);
+						await ctx.telegram.editMessageMedia(
+							ctx.chat.id,
+							parseInt(messageId),
+							undefined,
+							{
+								type: 'photo',
+								media: image,
+								caption,
+								parse_mode: 'HTML',
+							},
+							{
+								reply_markup: {
+									inline_keyboard: buttonsGroup,
+								},
+							},
+						);
+					}
+				}
+			}
 		}
 
 		if (buttons) {
@@ -37,6 +86,10 @@ export class MarkupController implements IMarkupController {
 					keyboard: buttons.items,
 				},
 			});
+			// TODO удалить
+			/*		await ctx.deleteMessage();*/
 		}
+
+		return message;
 	}
 }

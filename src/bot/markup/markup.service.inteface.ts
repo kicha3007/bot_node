@@ -1,7 +1,7 @@
 import { ISceneInfo } from './markup.controller.interface';
 
 export interface IMarkupSteps {
-	[key: string]: () => ISceneInfo;
+	[key: string]: (params?: Record<string, string>) => ISceneInfo;
 }
 
 export type Markup = Record<string, IMarkupSteps>;

@@ -7,13 +7,17 @@ import { ENV_NAMES, SCENES_NAMES } from '../constants';
 import { IConfigService } from '../infrastructure/config/config.service.interface';
 import { MarkupController } from './markup/markup.controller';
 import { CatalogSceneController } from './scenes/catalog-scene/catalog-scene.controller';
+import { DetailSceneController } from './scenes/detail-scene/detail-scene.controller';
 import { StartSceneController } from './scenes/start-scene/start-scene.controller';
 import { IPrismaService } from '../infrastructure/database/prisma.service.interface';
 import { MarkupService } from './markup/markup.service';
 import { ContactsRepository } from '../domains/contacts/contacts.repository';
 import { ProductsRepository } from '../domains/products/products.repository';
 import { UsersRepository } from '../domains/users/users.repository';
+import { CartRepository } from '../domains/cart/cart.repository';
+import { CartProductRepository } from '../domains/cartProduct/cartProduct.repository';
 import { IBotService, ICreateScenesProps } from './bot.service.interface';
+import { CartSceneController } from './scenes/cart-scene/cart-scene.controller';
 
 interface IBotServiceProps {
 	logger: ILogger;
@@ -36,25 +40,51 @@ export class BotService implements IBotService {
 		this.bot = new Telegraf<IMyContext>(token);
 		this.logger = logger;
 
-		const scenesInfo = [
+		const baseRepositories = { usersRepository: new UsersRepository(prismaService) };
+
+		const scenesInfoList = [
 			{
 				[SCENES_NAMES.START]: {
 					SceneController: StartSceneController,
 					repository: {
 						contactsRepository: new ContactsRepository(prismaService),
-						usersRepository: new UsersRepository(prismaService),
+						cartRepository: new CartRepository(prismaService),
+						...baseRepositories,
 					},
 				},
 			},
 			{
 				[SCENES_NAMES.CATALOG]: {
 					SceneController: CatalogSceneController,
+					repository: {
+						productsRepository: new ProductsRepository(prismaService),
+						cartProductRepository: new CartProductRepository(prismaService),
+						cartRepository: new CartRepository(prismaService),
+						...baseRepositories,
+					},
+				},
+			},
+			{
+				[SCENES_NAMES.DETAIL]: {
+					SceneController: DetailSceneController,
 					repository: { productsRepository: new ProductsRepository(prismaService) },
+					...baseRepositories,
+				},
+			},
+			{
+				[SCENES_NAMES.CART]: {
+					SceneController: CartSceneController,
+					repository: {
+						cartProductRepository: new CartProductRepository(prismaService),
+						cartRepository: new CartRepository(prismaService),
+						productsRepository: new ProductsRepository(prismaService),
+					},
+					...baseRepositories,
 				},
 			},
 		];
 
-		const scenes = this.createScenes({ scenes: scenesInfo, logger });
+		const scenes = this.createScenes({ scenes: scenesInfoList, logger });
 
 		this.stage = new Scenes.Stage<IMyContext>([...scenes]);
 	}

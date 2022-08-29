@@ -1,22 +1,30 @@
 import { IMyContext } from '../../common/common.interface';
 import { Scenes } from 'telegraf';
 import { ILogger } from '../../../infrastructure/logger/logger.interface';
+import { IUsersRepository } from '../../../domains/users/users.repository.interface';
 
-export interface IHandler {
+export interface IHandlerBase {
 	method: 'enter' | 'leave';
 	func: (ctx: IMyContext) => void;
 }
 
-export interface IHandlerCommand {
+export interface IHandlerAction {
 	method: 'on';
-	command: 'text' | 'text'[];
+	action: 'text' | 'text'[] | 'callback_query' | 'callback_query'[];
 	func: (ctx: IMyContext) => void;
+}
+
+export interface IHandlerCustomAction {
+	method: 'action';
+	customAction: string;
+	func: (ctx: IMyContext) => void | Promise<void>;
 }
 
 export interface IBaseControllerProps {
 	scene: Scenes.BaseScene<IMyContext>;
 	logger: ILogger;
 	sceneNames: string[];
+	usersRepository: IUsersRepository;
 }
 
 export interface IGetNextSiblingStep {
@@ -30,9 +38,11 @@ export interface IMoveNextScene {
 	nextSceneName: string;
 }
 
-export interface ISavePropertyToStorage {
+type SavePropertyToStorageProperty<T> = Record<string, T>;
+
+export interface ISavePropertyToStorage<T> {
 	ctx: IMyContext;
-	property: Record<string, string>;
+	property: SavePropertyToStorageProperty<T>;
 }
 
 export interface IGetPropertyFromStorage {

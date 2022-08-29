@@ -4,11 +4,8 @@ interface IMySessionScene extends Scenes.SceneSessionData {
 	myProps: string;
 }
 
-interface IMySession extends Scenes.SceneSession<IMySessionScene> {
-	currentStepName?: string;
-	city?: string;
-	address?: string;
-	productMessageId?: number;
+interface IMySession<T = string> extends Scenes.SceneSession<IMySessionScene> {
+	[key: string]: T | number | object;
 }
 
 export interface IMyContext extends Context {

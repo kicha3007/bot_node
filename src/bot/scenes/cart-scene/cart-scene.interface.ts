@@ -37,9 +37,17 @@ export interface IShowProductWithNavigation {
 	image: string;
 	mode?: InlineButtonsMode;
 	messageId?: string;
+	productSum?: string;
+	productCount?: number;
+	messagePay?: string;
 }
 
 export interface IGeneratePositionMessageParams {
 	currentPosition: number;
 	itemsLength: number;
+}
+
+export interface IGenerateProductSumParams {
+	count: number;
+	price: number;
 }
