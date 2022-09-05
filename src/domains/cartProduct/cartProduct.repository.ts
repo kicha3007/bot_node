@@ -3,6 +3,8 @@ import {
 	getCartProductsReturn,
 	ICartProductRepository,
 	IGetCartProductsParams,
+	IRemoveProductParams,
+	type RemoveProductReturn,
 } from './cartProduct.repository.interface';
 import { CartProduct } from './cartProduct.entity';
 import { IPrismaService } from '../../infrastructure/database/prisma.service.interface';
@@ -10,7 +12,9 @@ import { IPrismaService } from '../../infrastructure/database/prisma.service.int
 export class CartProductRepository implements ICartProductRepository {
 	constructor(private prismaService: IPrismaService) {}
 
-	add({ cartId, productId }: CartProduct): AddCartProductReturn {
+	add(params: CartProduct): AddCartProductReturn {
+		const { cartId, productId } = params;
+
 		return this.prismaService.client.cartProductModel.upsert({
 			where: {
 				productId,
@@ -26,7 +30,7 @@ export class CartProductRepository implements ICartProductRepository {
 		});
 	}
 
-	async getProducts(params: IGetCartProductsParams = {}): getCartProductsReturn {
+	getProducts(params: IGetCartProductsParams = {}): getCartProductsReturn {
 		const { skip, take } = params;
 
 		if (isNaN(<number>skip)) {
@@ -39,5 +43,15 @@ export class CartProductRepository implements ICartProductRepository {
 				take,
 			});
 		}
+	}
+
+	removeProduct(params: IRemoveProductParams): RemoveProductReturn {
+		const { productId } = params;
+
+		return this.prismaService.client.cartProductModel.delete({
+			where: {
+				id: productId,
+			},
+		});
 	}
 }

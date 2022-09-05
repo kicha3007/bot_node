@@ -97,11 +97,6 @@ export class CatalogSceneController extends BaseController {
 					itemsLength: this.itemsLength,
 				});
 
-				/*		const currentProductMessageId = this.getPropertyFromStorage({
-					ctx,
-					property: PROPERTY_STORAGE_NAMES.PRODUCT_MESSAGE_ID,
-				});*/
-
 				const productChatMessage = await this.showProductWithNavigation({
 					ctx,
 					countMessage: productPositionMessage,
@@ -304,16 +299,6 @@ export class CatalogSceneController extends BaseController {
 			nextSceneName: SCENES_NAMES.DETAIL,
 		});
 	}
-
-	/*
-	async goToCart(ctx: IMyContext): Promise<void> {
-		console.log('goToCart');
-		await this.moveNextScene({
-			ctx,
-			nextSceneName: SCENES_NAMES.CART,
-		});
-	}
-*/
 
 	async addToCart(ctx: IMyContext): Promise<void> {
 		const user = await this.getCurrentUser(ctx);

@@ -10,7 +10,14 @@ export interface IGetCartProductsParams {
 
 export type getCartProductsReturn = Promise<CartProductModel[] | []>;
 
+export interface IRemoveProductParams {
+	productId: number;
+}
+
+export type RemoveProductReturn = Promise<CartProductModel>;
+
 export interface ICartProductRepository {
 	getProducts: (params?: IGetCartProductsParams) => getCartProductsReturn;
-	add: (cartParams: CartProduct) => AddCartProductReturn;
+	add: (params: CartProduct) => AddCartProductReturn;
+	removeProduct: (params: IRemoveProductParams) => RemoveProductReturn;
 }

@@ -3,6 +3,11 @@ import { ProductModel } from '@prisma/client';
 export interface IGetProductsParams {
 	skip?: number;
 	take?: number;
+	where?: {
+		[key: string]: {
+			[key: string]: number | string | (string | number)[];
+		};
+	};
 }
 
 export type getProductsReturn = Promise<ProductModel[] | []>;

@@ -11,10 +11,11 @@ export class ProductsRepository implements IProductsRepository {
 	constructor(private prismaService: IPrismaService) {}
 
 	async getProducts(params: IGetProductsParams = {}): getProductsReturn {
-		const { skip, take } = params;
+		const { skip, take, where } = params;
 
 		if (isNaN(<number>skip)) {
 			return this.prismaService.client.productModel.findMany({
+				where,
 				take,
 			});
 		} else {

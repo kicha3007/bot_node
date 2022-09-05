@@ -47,7 +47,17 @@ export interface IGeneratePositionMessageParams {
 	itemsLength: number;
 }
 
-export interface IGenerateProductSumParams {
+export interface IGenerateProductAmountParams {
 	count: number;
 	price: number;
+}
+
+export interface IShowProductInsideCartParams {
+	ctx: IMyContext;
+	nextPosition: number;
+	mode?: 'create' | 'edit';
+}
+
+export interface IGenerateTotalAmountMessage {
+	totalAmount: number;
 }

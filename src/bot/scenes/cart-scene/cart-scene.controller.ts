@@ -7,7 +7,9 @@ import {
 	IGeneratePositionMessageParams,
 	IGenerateProductTemplate,
 	IShowProductWithNavigation,
-	IGenerateProductSumParams,
+	IGenerateProductAmountParams,
+	IShowProductInsideCartParams,
+	IGenerateTotalAmountMessage,
 } from './cart-scene.interface';
 import {
 	getProductReturn,
@@ -19,10 +21,11 @@ import {
 	ICartProductRepository,
 	IGetCartProductsParams,
 } from '../../../domains/cartProduct/cartProduct.repository.interface';
-import { MESSAGES, STEPS_NAMES, PROPERTY_STORAGE_NAMES } from '../../../constants';
+import { MESSAGES, DEFAULT_CART_PRODUCT_POSITION } from '../../../constants';
 import { ICartRepository } from '../../../domains/cart/cart.repository.interface';
 import { IUsersRepository } from '../../../domains/users/users.repository.interface';
 import { Message } from 'telegraf/src/core/types/typegram';
+import { ProductModel } from '@prisma/client';
 
 export class CartSceneController extends BaseController {
 	markupController: IMarkupController;
@@ -33,6 +36,8 @@ export class CartSceneController extends BaseController {
 	usersRepository: IUsersRepository;
 	productChatMessageId: number | undefined;
 	productsRepository: IProductsRepository;
+	currentCartProductPosition: number;
+	currentProductId: number;
 
 	constructor({
 		scene,
@@ -65,57 +70,48 @@ export class CartSceneController extends BaseController {
 				customAction: MESSAGES.PREV,
 				func: this.getSiblingProduct('prev'),
 			},
+			{
+				method: 'action',
+				customAction: MESSAGES.AMOUNT_TITLES,
+				func: this.onClickAmountTitles,
+			},
+			{
+				method: 'action',
+				customAction: MESSAGES.CURRENT_PRODUCT_COUNT,
+				func: this.onClickCurrentProductCount,
+			},
+			{
+				method: 'action',
+				customAction: MESSAGES.PRODUCT_SUM,
+				func: this.onClickProductSum,
+			},
+			{
+				method: 'action',
+				customAction: MESSAGES.REMOVE_PRODUCT,
+				func: this.removeProduct,
+			},
 		]);
 	}
 
-	generateProductSum({ count, price }: IGenerateProductSumParams): string {
+	generateProductAmount({ count, price }: IGenerateProductAmountParams): string {
 		const result = count * price;
 
 		return `${price} * ${count} = ${result}`;
 	}
 
 	async start(ctx: IMyContext): Promise<void> {
+		await this.setCartProductsLength();
+
 		try {
-			const cartProducts = await this.getCartProducts();
-			const firstCartProduct = cartProducts[0];
-
-			if (firstCartProduct && firstCartProduct.id) {
-				const product = await this.getProduct({ id: firstCartProduct.id });
-
-				if (product) {
-					const productTemplate = this.generateProductTemplate({ product });
-
-					this.cartProductsLength = cartProducts.length;
-					const currentProductPosition = 1;
-
-					const productPositionMessage = this.generatePositionMessage({
-						currentPosition: currentProductPosition,
-						itemsLength: this.cartProductsLength,
-					});
-
-					const productSum = this.generateProductSum({
-						price: product.price,
-						count: firstCartProduct.productCount,
-					});
-
-					const productChatMessage = await this.showProductWithNavigation({
-						ctx,
-						countMessage: productPositionMessage,
-						caption: productTemplate,
-						image: product.image,
-						productSum,
-						productCount: firstCartProduct.productCount,
-						messagePay: 'Оплааатить',
-					});
-
-					this.productChatMessageId = productChatMessage?.message_id;
-
-					await this.markupController.createMarkup(ctx, this.markup[STEPS_NAMES.BASE_STEP]());
-				}
-			}
+			await this.showProductInsideCart({ ctx, nextPosition: DEFAULT_CART_PRODUCT_POSITION });
 		} catch (err) {
 			this.logger.error(`[CartSceneController] ${err}`);
 		}
+	}
+
+	async setCartProductsLength(): Promise<void> {
+		const cartProducts = await this.getCartProducts();
+		this.cartProductsLength = cartProducts.length;
 	}
 
 	async getProduct({ id }: IGetProductParams = {}): getProductReturn {
@@ -135,6 +131,34 @@ export class CartSceneController extends BaseController {
 		itemsLength,
 	}: IGeneratePositionMessageParams): string {
 		return `${currentPosition} из ${itemsLength}`;
+	}
+
+	async getTotalAmount(): Promise<number> {
+		const cartProducts = await this.getCartProducts();
+
+		const productIdList = cartProducts.map(({ productId }) => productId);
+		const products = await this.productsRepository.getProducts({
+			where: {
+				id: { in: productIdList },
+			},
+		});
+
+		const totalAmount = (products as ProductModel[]).reduce((totalAmount, product) => {
+			const currentCartProduct = cartProducts.find(({ productId }) => productId === product.id);
+			console.log('currentCartProduct', currentCartProduct);
+			const productQuantity = currentCartProduct?.productCount;
+			// TODO как тут лучше обрабатывать ошибку productQuantity === undefined?
+			const currentProductTotalAmount = (productQuantity || 0) * product.price;
+
+			const productsTotalAmount = totalAmount + currentProductTotalAmount;
+			return productsTotalAmount;
+		}, 0);
+
+		return totalAmount;
+	}
+
+	async generateTotalAmountMessage({ totalAmount }: IGenerateTotalAmountMessage): Promise<string> {
+		return `Оформить - ${totalAmount} руб.`;
 	}
 
 	async showProductWithNavigation({
@@ -194,64 +218,121 @@ export class CartSceneController extends BaseController {
 		return currentPosition;
 	}
 
-	getSiblingProduct(direction: 'prev' | 'next'): (ctx: IMyContext) => Promise<void> {
-		return async (ctx: IMyContext): Promise<void> => {
-			await ctx.answerCbQuery();
+	async showProductInsideCart({
+		ctx,
+		nextPosition,
+		mode,
+	}: IShowProductInsideCartParams): Promise<void> {
+		const loopedNextProductPosition = this.loopNavigation({
+			nextPosition,
+			itemsLength: this.cartProductsLength,
+		});
 
-			const currentProductPosition = this.getPropertyFromStorage({
+		const countForTake = 1;
+		const countForNormalizePosition = 1;
+
+		const cartProducts = await this.getCartProducts({
+			take: countForTake,
+			skip: loopedNextProductPosition - countForNormalizePosition,
+		});
+
+		const cartProduct = cartProducts[0];
+		if (cartProduct?.productId) {
+			console.log('cartProduct?.id', cartProduct?.productId);
+			const product = await this.getProduct({ id: cartProduct.productId });
+			console.log('product', product);
+			if (product) {
+				this.currentProductId = product.id;
+				const productTemplate = this.generateProductTemplate({ product });
+
+				const productPositionMessage = this.generatePositionMessage({
+					currentPosition: loopedNextProductPosition,
+					itemsLength: this.cartProductsLength,
+				});
+
+				const productSum = this.generateProductAmount({
+					price: product.price,
+					count: cartProduct.productCount,
+				});
+
+				const totalAmount = await this.getTotalAmount();
+				const totalAmountMessage = await this.generateTotalAmountMessage({ totalAmount });
+
+				const productChatMessage = await this.showProductWithNavigation({
+					ctx,
+					countMessage: productPositionMessage,
+					caption: productTemplate,
+					image: product.image,
+					productSum,
+					productCount: cartProduct.productCount,
+					messagePay: totalAmountMessage,
+					mode,
+					messageId: String(this.productChatMessageId),
+				});
+
+				if (!this.productChatMessageId) {
+					this.productChatMessageId = productChatMessage?.message_id;
+				}
+
+				this.currentCartProductPosition = loopedNextProductPosition;
+			}
+		}
+	}
+
+	getSiblingProduct(direction: 'prev' | 'next'): (ctx: IMyContext) => Promise<void> {
+		/*		const hasOneOrLessProducts = this.cartProductsLength === 1;
+		if (hasOneOrLessProducts) {
+			return;
+		}*/
+
+		return async (ctx: IMyContext): Promise<void> => {
+			const step = 1;
+
+			const nextCartProductPosition =
+				direction === 'prev'
+					? this.currentCartProductPosition - step
+					: this.currentCartProductPosition + step;
+
+			await this.showProductInsideCart({
 				ctx,
-				property: PROPERTY_STORAGE_NAMES.PRODUCT_POSITION,
+				nextPosition: nextCartProductPosition,
+				mode: 'edit',
 			});
 
-			if (currentProductPosition) {
-				const step = 1;
-
-				const nextProductPosition =
-					direction === 'prev'
-						? parseInt(currentProductPosition) - step
-						: parseInt(currentProductPosition) + step;
-
-				if (this.cartProductsLength) {
-					const loopedNextProductPosition = this.loopNavigation({
-						nextPosition: nextProductPosition,
-						itemsLength: this.cartProductsLength,
-					});
-
-					const countForTake = 1;
-					const countForNormalizePosition = 1;
-
-					const products = await this.getCartProducts({
-						take: countForTake,
-						skip: loopedNextProductPosition - countForNormalizePosition,
-					});
-
-					const product = products[0];
-					if (product) {
-						this.savePropertyToStorage<number>({
-							ctx,
-							property: { [PROPERTY_STORAGE_NAMES.PRODUCT_ID]: product.id },
-						});
-
-						this.savePropertyToStorage<number>({
-							ctx,
-							property: { [PROPERTY_STORAGE_NAMES.PRODUCT_POSITION]: loopedNextProductPosition },
-						});
-					}
-				}
-			}
+			await ctx.answerCbQuery();
 		};
 	}
 
-	/*
+	async onClickAmountTitles(ctx: IMyContext): Promise<void> {
+		console.log('onClickAmountTitles');
+		await ctx.answerCbQuery(MESSAGES.AMOUNT_TITLES);
+	}
 
+	async onClickCurrentProductCount(ctx: IMyContext): Promise<void> {
+		await ctx.answerCbQuery(MESSAGES.CURRENT_PRODUCT_COUNT);
+	}
 
+	async onClickProductSum(ctx: IMyContext): Promise<void> {
+		await ctx.answerCbQuery(MESSAGES.PRODUCT_SUM);
+	}
 
+	async removeProduct(ctx: IMyContext): Promise<void> {
+		await this.cartProductRepository.removeProduct({ productId: this.currentProductId });
 
+		await this.setCartProductsLength();
 
+		await this.showProductInsideCart({
+			ctx,
+			nextPosition: DEFAULT_CART_PRODUCT_POSITION,
+			mode: 'edit',
+		});
+	}
 
+	goToPay(ctx: IMyContext) {
+		/*	await ctx.answerCbQuery();*/
+	}
 
-
-  async actionsController({ ctx, message }: IActionController): Promise<void> {
+	/*	async actionsController({ ctx, message }: IActionController): Promise<void> {
     switch (message) {
       case MESSAGES.MY_ORDERS: {
         await ctx.deleteMessage();
@@ -274,21 +355,5 @@ export class CartSceneController extends BaseController {
         await this.actionsController({ ctx, message });
       }
     }
-  }
-
-  /!*	// TODO позже удалить
-  async onAction(ctx: IMyContext): Promise<void> {
-    ctx.reply('sfsdf');
-    if (ctx.message) {
-      const message = 'text' in ctx.message && ctx.message.text;
-    }
-  }*!/
-
-  async goToDetail(ctx: IMyContext): Promise<void> {
-    await this.moveNextScene({
-      ctx,
-      nextSceneName: SCENES_NAMES.DETAIL,
-    });
-  }
-*/
+  }*/
 }

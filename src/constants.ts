@@ -27,13 +27,13 @@ export enum MESSAGES {
 	DETAIL_DESCRIPTION = 'Детальное описание',
 	ADD_TO_CART = 'Добавить в корзину',
 	ADD_TO_CART_DONE = 'Товар добавлен в корзину',
-	PRODUCT_SUM = 'Стоимость продукта',
+	PRODUCT_SUM = 'Общая стоимость продукта',
 	REMOVE_PRODUCT = '❌',
 	INCREMENT_PRODUCT_COUNT = '+',
 	DECREMENT_PRODUCT_COUNT = '−',
 	CURRENT_PRODUCT_COUNT = 'Количество товара',
-	TO_PAY = 'Оплатить',
-	ALL_PRODUCTS_COUNT = 'Количество шариков',
+	TO_PAY = 'Оформить',
+	AMOUNT_TITLES = 'Количество наименований',
 }
 
 export enum MARKUP_TYPES {
@@ -47,3 +47,5 @@ export enum PROPERTY_STORAGE_NAMES {
 	PRODUCT_POSITION = 'productPosition',
 	PRODUCT_ID = 'productId',
 }
+
+export const DEFAULT_CART_PRODUCT_POSITION = 1;

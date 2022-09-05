@@ -73,6 +73,7 @@ export class MarkupService implements IMarkupService {
 							title: 'Навигация',
 							items: [
 								[MESSAGES.MY_ORDERS, MESSAGES.CATALOG],
+								// TODO позже добавить текстовые сцены
 								['Доставка', 'FAQ'],
 							],
 						},
@@ -151,7 +152,7 @@ export class MarkupService implements IMarkupService {
 										message: MESSAGES.PREV,
 										callback: MESSAGES.PREV,
 									},
-									{ message: countMessage, callback: MESSAGES.ALL_PRODUCTS_COUNT },
+									{ message: countMessage, callback: MESSAGES.AMOUNT_TITLES },
 									{ message: MESSAGES.NEXT, callback: MESSAGES.NEXT },
 								],
 								[{ message: messagePay, callback: MESSAGES.TO_PAY }],
