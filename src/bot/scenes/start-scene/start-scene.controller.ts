@@ -116,7 +116,6 @@ export class StartSceneController extends BaseController {
 	}
 
 	async onAnswer(ctx: IMyContext): Promise<void> {
-		console.log('startSceneAnswer');
 		this.saveContactsTemporary(ctx);
 
 		const currentStepName = this.getCurrentStepName(ctx);

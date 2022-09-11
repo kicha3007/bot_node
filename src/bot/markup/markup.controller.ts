@@ -58,7 +58,6 @@ export class MarkupController implements IMarkupController {
 			} else {
 				if (type === 'photo') {
 					if (ctx.chat?.id && image && messageId) {
-						console.log('messageId!!!', messageId);
 						await ctx.telegram.editMessageMedia(
 							ctx.chat.id,
 							parseInt(messageId),
@@ -86,8 +85,6 @@ export class MarkupController implements IMarkupController {
 					keyboard: buttons.items,
 				},
 			});
-			// TODO удалить
-			/*		await ctx.deleteMessage();*/
 		}
 
 		return message;

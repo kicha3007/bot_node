@@ -5,6 +5,8 @@ import {
 	IGetCartProductsParams,
 	IRemoveProductParams,
 	type RemoveProductReturn,
+	type UpdateProductReturn,
+	IUpdateProductParams,
 } from './cartProduct.repository.interface';
 import { CartProduct } from './cartProduct.entity';
 import { IPrismaService } from '../../infrastructure/database/prisma.service.interface';
@@ -50,7 +52,20 @@ export class CartProductRepository implements ICartProductRepository {
 
 		return this.prismaService.client.cartProductModel.delete({
 			where: {
-				id: productId,
+				productId,
+			},
+		});
+	}
+
+	updateProduct(params: IUpdateProductParams): UpdateProductReturn {
+		const { productId, productCount } = params;
+
+		return this.prismaService.client.cartProductModel.update({
+			where: {
+				productId,
+			},
+			data: {
+				productCount: productCount,
 			},
 		});
 	}

@@ -14,6 +14,7 @@ export enum STEPS_NAMES {
 	SET_CITY = 'SET_CITY',
 	SET_ADDRESS = 'SET_ADDRESS',
 	SET_BUTTONS = 'SET_BUTTONS',
+	EMPTY_CART = 'EMPTY_CART',
 }
 
 export enum MESSAGES {
@@ -34,6 +35,9 @@ export enum MESSAGES {
 	CURRENT_PRODUCT_COUNT = 'Количество товара',
 	TO_PAY = 'Оформить',
 	AMOUNT_TITLES = 'Количество наименований',
+	EMPTY_CART = 'Корзина пуста',
+	NAVIGATION_TITLE = 'Навигация',
+	COUNT_PRODUCT_IN_LIST = 'Позиция товара в списке',
 }
 
 export enum MARKUP_TYPES {

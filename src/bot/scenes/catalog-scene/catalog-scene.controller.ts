@@ -4,7 +4,6 @@ import { IMarkupController } from '../../markup/markup.controller.interface';
 import { IMarkupSteps } from '../../markup/markup.service.inteface';
 import {
 	ICatalogSceneControllerProps,
-	IActionController,
 	IGenerateProductTemplate,
 	IShowProductWithNavigation,
 	IGeneratePositionMessageParams,
@@ -51,7 +50,6 @@ export class CatalogSceneController extends BaseController {
 
 		this.bindActions([
 			{ method: 'enter', func: this.start },
-			/*{ method: 'on', action: 'text', func: this.onAnswer },*/
 			{
 				method: 'action',
 				customAction: MESSAGES.NEXT,
@@ -72,7 +70,11 @@ export class CatalogSceneController extends BaseController {
 				customAction: MESSAGES.ADD_TO_CART,
 				func: this.addToCart,
 			},
-			/*{ method: 'on', action: 'callback_query', func: this.onAction },*/
+			{
+				method: 'action',
+				customAction: MESSAGES.COUNT_PRODUCT_IN_LIST,
+				func: this.onClickCountProductInList,
+			},
 		]);
 	}
 
@@ -259,22 +261,6 @@ export class CatalogSceneController extends BaseController {
 		};
 	}
 
-	/*	async actionsController({ ctx, message }: IActionController): Promise<void> {
-		switch (message) {
-			case MESSAGES.MY_ORDERS: {
-				await ctx.deleteMessage();
-				await this.goToCart(ctx);
-				break; 
-			}
-			case MESSAGES.CATALOG: {
-				await ctx.scene.reenter();
-				break;
-			}
-			default:
-				await ctx.reply('Нам пока не нужны эти данные. Спасибо.');
-		}
-	}*/
-
 	public async onAnswer(ctx: IMyContext): Promise<void> {
 		if (ctx.message) {
 			// TODO Пока так решил проблему с типизацией text в message
@@ -284,14 +270,6 @@ export class CatalogSceneController extends BaseController {
 			}
 		}
 	}
-
-	/*	// TODO позже удалить
-	async onAction(ctx: IMyContext): Promise<void> {
-		ctx.reply('sfsdf');
-		if (ctx.message) {
-			const message = 'text' in ctx.message && ctx.message.text;
-		}
-	}*/
 
 	async goToDetail(ctx: IMyContext): Promise<void> {
 		await this.moveNextScene({
@@ -304,7 +282,6 @@ export class CatalogSceneController extends BaseController {
 		const user = await this.getCurrentUser(ctx);
 
 		const cart = user && (await this.cartRepository.getCart({ userId: user.id }));
-		console.log('addToCart');
 		const productId = this.getPropertyFromStorage({
 			ctx,
 			property: PROPERTY_STORAGE_NAMES.PRODUCT_ID,
@@ -316,5 +293,9 @@ export class CatalogSceneController extends BaseController {
 		}
 
 		await ctx.answerCbQuery(MESSAGES.ADD_TO_CART_DONE);
+	}
+
+	async onClickCountProductInList(ctx: IMyContext): Promise<void> {
+		await ctx.answerCbQuery(MESSAGES.COUNT_PRODUCT_IN_LIST);
 	}
 }

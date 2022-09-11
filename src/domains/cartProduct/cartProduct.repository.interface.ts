@@ -16,8 +16,16 @@ export interface IRemoveProductParams {
 
 export type RemoveProductReturn = Promise<CartProductModel>;
 
+export interface IUpdateProductParams {
+	productId: number;
+	productCount: number;
+}
+
+export type UpdateProductReturn = Promise<CartProductModel>;
+
 export interface ICartProductRepository {
 	getProducts: (params?: IGetCartProductsParams) => getCartProductsReturn;
 	add: (params: CartProduct) => AddCartProductReturn;
 	removeProduct: (params: IRemoveProductParams) => RemoveProductReturn;
+	updateProduct: (params: IUpdateProductParams) => UpdateProductReturn;
 }

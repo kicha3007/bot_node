@@ -35,7 +35,6 @@ export abstract class BaseController {
 	}
 
 	async goToCart(ctx: IMyContext): Promise<void> {
-		console.log('goToCart');
 		await this.moveNextScene({
 			ctx,
 			nextSceneName: SCENES_NAMES.CART,
@@ -145,12 +144,16 @@ export abstract class BaseController {
 	async actionsController({ ctx, message }: IActionController): Promise<void> {
 		switch (message) {
 			case MESSAGES.MY_ORDERS: {
-				/*await ctx.deleteMessage();*/
 				await this.goToCart(ctx);
 				break;
 			}
 			case MESSAGES.CATALOG: {
-				await ctx.scene.reenter();
+				this.setNextStep(ctx, STEPS_NAMES.BASE_STEP);
+				await this.moveNextScene({
+					ctx,
+					nextSceneName: SCENES_NAMES.CATALOG,
+				});
+
 				break;
 			}
 			default:
@@ -159,7 +162,6 @@ export abstract class BaseController {
 	}
 
 	protected async onAnswer(ctx: IMyContext): Promise<void> {
-		console.log('baseSceneAnswer');
 		if (ctx.message) {
 			// TODO Пока так решил проблему с типизацией text в message
 			const message = 'text' in ctx.message && ctx.message.text;

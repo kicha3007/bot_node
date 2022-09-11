@@ -53,16 +53,10 @@ export class MarkupService implements IMarkupService {
 										message: MESSAGES.PREV,
 										callback: MESSAGES.PREV,
 									},
-									{ message: countMessage, callback: 'count' },
+									{ message: countMessage, callback: MESSAGES.COUNT_PRODUCT_IN_LIST },
 									{ message: MESSAGES.NEXT, callback: MESSAGES.NEXT },
 								],
-								[
-									{
-										message: 'Назад',
-										callback: 'back',
-									},
-									{ message: MESSAGES.ADD_TO_CART, callback: MESSAGES.ADD_TO_CART },
-								],
+								[{ message: MESSAGES.ADD_TO_CART, callback: MESSAGES.ADD_TO_CART }],
 							],
 						},
 					};
@@ -70,11 +64,11 @@ export class MarkupService implements IMarkupService {
 				[STEPS_NAMES.SET_BUTTONS]: (): ISceneInfo => {
 					return {
 						buttons: {
-							title: 'Навигация',
+							title: MESSAGES.NAVIGATION_TITLE,
 							items: [
 								[MESSAGES.MY_ORDERS, MESSAGES.CATALOG],
 								// TODO позже добавить текстовые сцены
-								['Доставка', 'FAQ'],
+								/*	['Доставка', 'FAQ'],*/
 							],
 						},
 					};
@@ -158,6 +152,11 @@ export class MarkupService implements IMarkupService {
 								[{ message: messagePay, callback: MESSAGES.TO_PAY }],
 							],
 						},
+					};
+				},
+				[STEPS_NAMES.EMPTY_CART]: (): ISceneInfo => {
+					return {
+						replies: [{ type: MARKUP_TYPES.TEXT, message: MESSAGES.EMPTY_CART }],
 					};
 				},
 			},
