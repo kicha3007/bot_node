@@ -15,7 +15,7 @@ import { ContactsRepository } from '../domains/contacts/contacts.repository';
 import { ProductsRepository } from '../domains/products/products.repository';
 import { UsersRepository } from '../domains/users/users.repository';
 import { CartRepository } from '../domains/cart/cart.repository';
-import { CartProductRepository } from '../domains/cartProduct/cartProduct.repository';
+import { CartProductRepository } from '../domains/cart/cartProduct/cartProduct.repository';
 import { IBotService, ICreateScenesProps } from './bot.service.interface';
 import { CartSceneController } from './scenes/cart-scene/cart-scene.controller';
 
@@ -33,6 +33,12 @@ export class BotService implements IBotService {
 	constructor({ logger, configService, prismaService }: IBotServiceProps) {
 		const token = configService.get(ENV_NAMES.TOKEN);
 
+		const usersRepository = new UsersRepository(prismaService);
+		const contactsRepository = new ContactsRepository(prismaService);
+		const cartRepository = new CartRepository(prismaService);
+		const productsRepository = new ProductsRepository(prismaService);
+		const cartProductRepository = new CartProductRepository(prismaService);
+
 		if (!token) {
 			throw new Error('Не задан token');
 		}
@@ -40,15 +46,15 @@ export class BotService implements IBotService {
 		this.bot = new Telegraf<IMyContext>(token);
 		this.logger = logger;
 
-		const baseRepositories = { usersRepository: new UsersRepository(prismaService) };
+		const baseRepositories = { usersRepository };
 
 		const scenesInfoList = [
 			{
 				[SCENES_NAMES.START]: {
 					SceneController: StartSceneController,
 					repository: {
-						contactsRepository: new ContactsRepository(prismaService),
-						cartRepository: new CartRepository(prismaService),
+						contactsRepository,
+						cartRepository,
 						...baseRepositories,
 					},
 				},
@@ -57,9 +63,9 @@ export class BotService implements IBotService {
 				[SCENES_NAMES.CATALOG]: {
 					SceneController: CatalogSceneController,
 					repository: {
-						productsRepository: new ProductsRepository(prismaService),
-						cartProductRepository: new CartProductRepository(prismaService),
-						cartRepository: new CartRepository(prismaService),
+						productsRepository,
+						cartProductRepository,
+						cartRepository,
 						...baseRepositories,
 					},
 				},
@@ -67,7 +73,7 @@ export class BotService implements IBotService {
 			{
 				[SCENES_NAMES.DETAIL]: {
 					SceneController: DetailSceneController,
-					repository: { productsRepository: new ProductsRepository(prismaService) },
+					repository: { productsRepository },
 					...baseRepositories,
 				},
 			},
@@ -75,9 +81,9 @@ export class BotService implements IBotService {
 				[SCENES_NAMES.CART]: {
 					SceneController: CartSceneController,
 					repository: {
-						cartProductRepository: new CartProductRepository(prismaService),
-						cartRepository: new CartRepository(prismaService),
-						productsRepository: new ProductsRepository(prismaService),
+						cartProductRepository,
+						cartRepository,
+						productsRepository,
 					},
 					...baseRepositories,
 				},
@@ -92,7 +98,6 @@ export class BotService implements IBotService {
 	createScenes({ scenes, logger }: ICreateScenesProps): Scenes.BaseScene<IMyContext>[] {
 		const markupController = new MarkupController();
 		const markupService = new MarkupService();
-		const sceneNames = markupService.getSceneNames();
 
 		return scenes.map((sceneInfo) => {
 			const [[sceneName, sceneValue]] = Object.entries(sceneInfo);
@@ -102,7 +107,6 @@ export class BotService implements IBotService {
 				markupController: markupController,
 				markup: markupService.getCurrentMarkup(sceneName),
 				scene,
-				sceneNames,
 				...sceneValue.repository,
 			});
 

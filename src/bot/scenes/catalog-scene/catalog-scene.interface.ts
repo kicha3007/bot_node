@@ -5,17 +5,16 @@ import { IMarkupController, InlineButtonsMode } from '../../markup/markup.contro
 import { IMarkupSteps } from '../../markup/markup.service.inteface';
 import { IProductsRepository } from '../../../domains/products/products.repository.interface';
 import { ProductModel } from '@prisma/client';
-import { ICartProductRepository } from '../../../domains/cartProduct/cartProduct.repository.interface';
+import { ICartProductRepository } from '../../../domains/cart/cartProduct/cartProduct.repository.interface';
 import { ICartRepository } from '../../../domains/cart/cart.repository.interface';
 import { IUsersRepository } from '../../../domains/users/users.repository.interface';
 
-export interface ICatalogSceneControllerProps {
+export interface ICatalogSceneConstructor {
 	scene: Scenes.BaseScene<IMyContext>;
 	logger: ILogger;
 	markupController: IMarkupController;
 	markup: IMarkupSteps;
 	productsRepository: IProductsRepository;
-	sceneNames: string[];
 	cartProductRepository: ICartProductRepository;
 	cartRepository: ICartRepository;
 	usersRepository: IUsersRepository;

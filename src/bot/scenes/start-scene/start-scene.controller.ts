@@ -27,9 +27,8 @@ export class StartSceneController extends BaseController {
 		usersRepository,
 		cartRepository,
 		markup,
-		sceneNames,
 	}: IStartSceneControllerProps) {
-		super({ scene, logger, sceneNames, usersRepository });
+		super({ scene, logger, usersRepository });
 		this.markupController = markupController;
 		this.markup = markup;
 		this.contactsRepository = contactsRepository;

@@ -13,5 +13,4 @@ export interface IDetailSceneProps {
 	markup: IMarkupSteps;
 	productsRepository: IProductsRepository;
 	usersRepository: IUsersRepository;
-	sceneNames: string[];
 }

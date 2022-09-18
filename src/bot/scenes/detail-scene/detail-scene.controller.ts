@@ -20,7 +20,6 @@ export class DetailSceneController extends BaseController {
 	markupController: IMarkupController;
 	markup: IMarkupSteps;
 	productsRepository: IProductsRepository;
-	sceneNames: string[];
 	usersRepository: IUsersRepository;
 
 	constructor({
@@ -29,14 +28,12 @@ export class DetailSceneController extends BaseController {
 		markupController,
 		markup,
 		productsRepository,
-		sceneNames,
 		usersRepository,
 	}: IDetailSceneProps) {
-		super({ scene, logger, sceneNames, usersRepository });
+		super({ scene, logger, usersRepository });
 		this.markupController = markupController;
 		this.markup = markup;
 		this.productsRepository = productsRepository;
-		this.sceneNames = sceneNames;
 		this.usersRepository = usersRepository;
 
 		this.bindActions([

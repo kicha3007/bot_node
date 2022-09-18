@@ -9,7 +9,7 @@ import {
 	IUpdateProductParams,
 } from './cartProduct.repository.interface';
 import { CartProduct } from './cartProduct.entity';
-import { IPrismaService } from '../../infrastructure/database/prisma.service.interface';
+import { IPrismaService } from '../../../infrastructure/database/prisma.service.interface';
 
 export class CartProductRepository implements ICartProductRepository {
 	constructor(private prismaService: IPrismaService) {}

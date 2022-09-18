@@ -22,13 +22,11 @@ import { IActionController } from '../catalog-scene/catalog-scene.interface';
 export abstract class BaseController {
 	protected readonly scene: Scenes.BaseScene<IMyContext>;
 	logger: ILogger;
-	sceneNames: string[];
 	usersRepository: IUsersRepository;
 
-	protected constructor({ scene, logger, sceneNames, usersRepository }: IBaseControllerProps) {
+	protected constructor({ scene, logger, usersRepository }: IBaseControllerProps) {
 		this.scene = scene;
 		this.logger = logger;
-		this.sceneNames = sceneNames;
 		this.usersRepository = usersRepository;
 
 		this.bindActions([{ method: 'on', action: 'text', func: this.onAnswer }]);
@@ -103,7 +101,8 @@ export abstract class BaseController {
 		return this.getNextSiblingStep({
 			ctx,
 			currentStepName: this.scene.id,
-			stepsNames: this.sceneNames,
+			// TODO временно, позже удалить
+			stepsNames: ['START'],
 		});
 	};
 

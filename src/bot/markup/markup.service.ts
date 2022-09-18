@@ -167,9 +167,4 @@ export class MarkupService implements IMarkupService {
 		const markup: Markup = this.markup();
 		return markup[currentSceneName];
 	}
-
-	getSceneNames(): string[] {
-		const markup: Markup = this.markup();
-		return Object.keys(markup);
-	}
 }

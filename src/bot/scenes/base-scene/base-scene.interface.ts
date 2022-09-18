@@ -23,7 +23,6 @@ export interface IHandlerCustomAction {
 export interface IBaseControllerProps {
 	scene: Scenes.BaseScene<IMyContext>;
 	logger: ILogger;
-	sceneNames: string[];
 	usersRepository: IUsersRepository;
 }
 

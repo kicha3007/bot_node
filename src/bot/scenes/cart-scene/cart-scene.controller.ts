@@ -3,13 +3,13 @@ import { IMyContext } from '../../common/common.interface';
 import { IMarkupController } from '../../markup/markup.controller.interface';
 import { IMarkupSteps } from '../../markup/markup.service.inteface';
 import {
-	ICatalogSceneControllerProps,
 	IGeneratePositionMessageParams,
 	IGenerateProductTemplate,
 	IShowProductWithNavigation,
 	IGenerateProductAmountParams,
 	IShowProductInsideCartParams,
 	IGenerateTotalAmountMessage,
+	ICartSceneConstructor,
 } from './cart-scene.interface';
 import {
 	getProductReturn,
@@ -20,7 +20,7 @@ import {
 	getCartProductsReturn,
 	ICartProductRepository,
 	IGetCartProductsParams,
-} from '../../../domains/cartProduct/cartProduct.repository.interface';
+} from '../../../domains/cart/cartProduct/cartProduct.repository.interface';
 import { MESSAGES, DEFAULT_CART_PRODUCT_POSITION, STEPS_NAMES } from '../../../constants';
 import { ICartRepository } from '../../../domains/cart/cart.repository.interface';
 import { IUsersRepository } from '../../../domains/users/users.repository.interface';
@@ -46,12 +46,11 @@ export class CartSceneController extends BaseController {
 		markupController,
 		markup,
 		cartProductRepository,
-		sceneNames,
 		cartRepository,
 		usersRepository,
 		productsRepository,
-	}: ICatalogSceneControllerProps) {
-		super({ scene, logger, sceneNames, usersRepository });
+	}: ICartSceneConstructor) {
+		super({ scene, logger, usersRepository });
 		this.markupController = markupController;
 		this.markup = markup;
 		this.cartProductRepository = cartProductRepository;

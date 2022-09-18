@@ -3,7 +3,7 @@ import { IMyContext } from '../../common/common.interface';
 import { IMarkupController } from '../../markup/markup.controller.interface';
 import { IMarkupSteps } from '../../markup/markup.service.inteface';
 import {
-	ICatalogSceneControllerProps,
+	ICatalogSceneConstructor,
 	IGenerateProductTemplate,
 	IShowProductWithNavigation,
 	IGeneratePositionMessageParams,
@@ -13,10 +13,10 @@ import {
 	IGetProductsParams,
 	IProductsRepository,
 } from '../../../domains/products/products.repository.interface';
-import { ICartProductRepository } from '../../../domains/cartProduct/cartProduct.repository.interface';
+import { ICartProductRepository } from '../../../domains/cart/cartProduct/cartProduct.repository.interface';
 import { MESSAGES, SCENES_NAMES, STEPS_NAMES, PROPERTY_STORAGE_NAMES } from '../../../constants';
 import { Message } from 'telegraf/src/core/types/typegram';
-import { CartProduct } from '../../../domains/cartProduct/cartProduct.entity';
+import { CartProduct } from '../../../domains/cart/cartProduct/cartProduct.entity';
 import { ICartRepository } from '../../../domains/cart/cart.repository.interface';
 import { IUsersRepository } from '../../../domains/users/users.repository.interface';
 
@@ -36,11 +36,10 @@ export class CatalogSceneController extends BaseController {
 		markup,
 		productsRepository,
 		cartProductRepository,
-		sceneNames,
 		cartRepository,
 		usersRepository,
-	}: ICatalogSceneControllerProps) {
-		super({ scene, logger, sceneNames, usersRepository });
+	}: ICatalogSceneConstructor) {
+		super({ scene, logger, usersRepository });
 		this.markupController = markupController;
 		this.markup = markup;
 		this.productsRepository = productsRepository;
@@ -281,15 +280,17 @@ export class CatalogSceneController extends BaseController {
 	async addToCart(ctx: IMyContext): Promise<void> {
 		const user = await this.getCurrentUser(ctx);
 
-		const cart = user && (await this.cartRepository.getCart({ userId: user.id }));
-		const productId = this.getPropertyFromStorage({
-			ctx,
-			property: PROPERTY_STORAGE_NAMES.PRODUCT_ID,
-		});
+		if (user) {
+			const cart = await this.cartRepository.getCart({ userId: user.id });
+			const productId = this.getPropertyFromStorage({
+				ctx,
+				property: PROPERTY_STORAGE_NAMES.PRODUCT_ID,
+			});
 
-		if (productId && cart) {
-			const cartProduct = new CartProduct(cart.id, parseInt(productId));
-			await this.cartProductRepository.add(cartProduct);
+			if (productId && cart) {
+				const cartProduct = new CartProduct(cart.id, parseInt(productId));
+				await this.cartProductRepository.add(cartProduct);
+			}
 		}
 
 		await ctx.answerCbQuery(MESSAGES.ADD_TO_CART_DONE);

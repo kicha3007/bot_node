@@ -15,5 +15,4 @@ export interface IStartSceneControllerProps {
 	usersRepository: IUsersRepository;
 	cartRepository: ICartRepository;
 	markup: IMarkupSteps;
-	sceneNames: string[];
 }
