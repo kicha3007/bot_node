@@ -7,7 +7,7 @@ import { IUsersRepository } from '../../../domains/users/users.repository.interf
 import { IMarkupSteps } from '../../markup/markup.service.inteface';
 import { ICartRepository } from '../../../domains/cart/cart.repository.interface';
 
-export interface IStartSceneControllerProps {
+export interface IStartSceneControllerConstructor {
 	scene: Scenes.BaseScene<IMyContext>;
 	logger: ILogger;
 	markupController: IMarkupController;

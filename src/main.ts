@@ -14,7 +14,7 @@ const bootstrap = async (): Promise<void> => {
 		configService: new ConfigService({ logger: loggerService }),
 		prismaService,
 	});
-	bot.init();
+	await bot.init();
 };
 
 bootstrap();

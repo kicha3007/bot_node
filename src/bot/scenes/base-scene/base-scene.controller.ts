@@ -1,7 +1,7 @@
 import { Scenes } from 'telegraf';
 import { IMyContext } from '../../common/common.interface';
 import { ILogger } from '../../../infrastructure/logger/logger.interface';
-import { MESSAGES, SCENES_NAMES, STEPS_NAMES } from '../../../constants';
+import { MARKUP_TYPES, MESSAGES, SCENES_NAMES, STEPS_NAMES } from '../../../constants';
 import { checkHasData, instanceOfType } from '../../../utils';
 import {
 	IGetPropertyFromStorage,
@@ -12,12 +12,13 @@ import {
 	IHandlerBase,
 	IHandlerAction,
 	IHandlerCustomAction,
+	IShowRepliesMarkupParams,
 } from './base-scene.interface';
 import {
 	IUsersRepository,
 	UserFindReturn,
 } from '../../../domains/users/users.repository.interface';
-import { IActionController } from '../catalog-scene/catalog-scene.interface';
+import { IActionController } from './base-scene.interface';
 
 export abstract class BaseController {
 	protected readonly scene: Scenes.BaseScene<IMyContext>;
@@ -162,10 +163,29 @@ export abstract class BaseController {
 
 	protected async onAnswer(ctx: IMyContext): Promise<void> {
 		if (ctx.message) {
-			// TODO Пока так решил проблему с типизацией text в message
 			const message = 'text' in ctx.message && ctx.message.text;
 			if (message) {
 				await this.actionsController({ ctx, message });
+			}
+		}
+	}
+
+	getScene(): Scenes.BaseScene<IMyContext> {
+		return this.scene;
+	}
+
+	protected async showRepliesMarkup({
+		ctx,
+		replies,
+		type = MARKUP_TYPES.HTML,
+	}: IShowRepliesMarkupParams): Promise<void> {
+		if (replies) {
+			for (const repl of replies) {
+				if (type === MARKUP_TYPES.HTML) {
+					await ctx.replyWithHTML(repl.message);
+				} else {
+					await ctx.reply(repl.message);
+				}
 			}
 		}
 	}
@@ -175,7 +195,6 @@ export abstract class BaseController {
 	): void {
 		for (const action of actions) {
 			const handler = action.func.bind(this);
-
 			if (instanceOfType<IHandlerAction>(action, 'action')) {
 				this.scene[action.method](action.action, handler);
 			} else if (instanceOfType<IHandlerCustomAction>(action, 'customAction')) {

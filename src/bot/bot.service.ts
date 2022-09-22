@@ -5,19 +5,19 @@ import { IMyContext } from './common/common.interface';
 import { ILogger } from '../infrastructure/logger/logger.interface';
 import { ENV_NAMES, SCENES_NAMES } from '../constants';
 import { IConfigService } from '../infrastructure/config/config.service.interface';
-import { MarkupController } from './markup/markup.controller';
+/*import { MarkupController } from './markup/markup.controller';
 import { CatalogSceneController } from './scenes/catalog-scene/catalog-scene.controller';
-import { DetailSceneController } from './scenes/detail-scene/detail-scene.controller';
+import { DetailSceneController } from './scenes/detail-scene/detail-scene.controller';*/
 import { StartSceneController } from './scenes/start-scene/start-scene.controller';
 import { IPrismaService } from '../infrastructure/database/prisma.service.interface';
-import { MarkupService } from './markup/markup.service';
+/*import { MarkupService } from './markup/markup.service';*/
 import { ContactsRepository } from '../domains/contacts/contacts.repository';
 import { ProductsRepository } from '../domains/products/products.repository';
 import { UsersRepository } from '../domains/users/users.repository';
 import { CartRepository } from '../domains/cart/cart.repository';
 import { CartProductRepository } from '../domains/cart/cartProduct/cartProduct.repository';
 import { IBotService, ICreateScenesProps } from './bot.service.interface';
-import { CartSceneController } from './scenes/cart-scene/cart-scene.controller';
+/*import { CartSceneController } from './scenes/cart-scene/cart-scene.controller';*/
 
 interface IBotServiceProps {
 	logger: ILogger;
@@ -59,7 +59,8 @@ export class BotService implements IBotService {
 					},
 				},
 			},
-			{
+			// TODO пока закомментировал, так как эти сцены временно удалил
+			/*		{
 				[SCENES_NAMES.CATALOG]: {
 					SceneController: CatalogSceneController,
 					repository: {
@@ -87,30 +88,23 @@ export class BotService implements IBotService {
 					},
 					...baseRepositories,
 				},
-			},
+			},*/
 		];
 
-		const scenes = this.createScenes({ scenes: scenesInfoList, logger });
-
-		this.stage = new Scenes.Stage<IMyContext>([...scenes]);
+		const scenes = this.createScenes({ scenesInfoList, logger });
+		this.stage = new Scenes.Stage<IMyContext>(scenes);
 	}
 
-	createScenes({ scenes, logger }: ICreateScenesProps): Scenes.BaseScene<IMyContext>[] {
-		const markupController = new MarkupController();
-		const markupService = new MarkupService();
+	createScenes({ scenesInfoList, logger }: ICreateScenesProps): Scenes.BaseScene<IMyContext>[] {
+		return scenesInfoList.map((sceneInfo) => {
+			const [currentSceneInfo] = Object.values(sceneInfo);
 
-		return scenes.map((sceneInfo) => {
-			const [[sceneName, sceneValue]] = Object.entries(sceneInfo);
-			const scene = new Scenes.BaseScene<IMyContext>(sceneName);
-			new sceneValue.SceneController({
+			const currentController = new currentSceneInfo.SceneController({
 				logger,
-				markupController: markupController,
-				markup: markupService.getCurrentMarkup(sceneName),
-				scene,
-				...sceneValue.repository,
+				...currentSceneInfo.repository,
 			});
 
-			return scene;
+			return currentController.getScene();
 		});
 	}
 

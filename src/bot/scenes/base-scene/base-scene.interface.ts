@@ -2,6 +2,7 @@ import { IMyContext } from '../../common/common.interface';
 import { Scenes } from 'telegraf';
 import { ILogger } from '../../../infrastructure/logger/logger.interface';
 import { IUsersRepository } from '../../../domains/users/users.repository.interface';
+import { MARKUP_TYPES } from '../../../constants';
 
 export interface IHandlerBase {
 	method: 'enter' | 'leave';
@@ -47,4 +48,19 @@ export interface ISavePropertyToStorage<T> {
 export interface IGetPropertyFromStorage {
 	ctx: IMyContext;
 	property: string;
+}
+
+export interface IActionController {
+	ctx: IMyContext;
+	message: string;
+}
+
+export interface ISceneReplItem {
+	message: string;
+}
+
+export interface IShowRepliesMarkupParams {
+	ctx: IMyContext;
+	replies: ISceneReplItem[];
+	type?: MARKUP_TYPES.TEXT | MARKUP_TYPES.HTML;
 }

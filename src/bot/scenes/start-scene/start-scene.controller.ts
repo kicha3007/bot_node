@@ -1,36 +1,32 @@
 import { BaseController } from '../base-scene/base-scene.controller';
 import { IMyContext } from '../../common/common.interface';
-import { IMarkupController } from '../../markup/markup.controller.interface';
 import { IContactsRepository } from '../../../domains/contacts/contacts.repository.interface';
-import { IMarkupSteps } from '../../markup/markup.service.inteface';
 import { IUsersRepository } from '../../../domains/users/users.repository.interface';
-import { STEPS_NAMES } from '../../../constants';
+import { MESSAGES, SCENES_NAMES } from '../../../constants';
 import { Contact } from '../../../domains/contacts/contact.entity';
 import { Cart } from '../../../domains/cart/cart.entity';
-import { IStartSceneControllerProps } from './start-scene.interface';
+import { IStartSceneControllerConstructor } from './start-scene.interface';
 import { ICartRepository } from '../../../domains/cart/cart.repository.interface';
+import { Scenes } from 'telegraf';
+import { StartSceneTemplate } from './start-scene.template';
 
 export class StartSceneController extends BaseController {
-	markupController: IMarkupController;
 	contactsRepository: IContactsRepository;
-	markup: IMarkupSteps;
 	usersRepository: IUsersRepository;
 	cartRepository: ICartRepository;
 	city: string;
 	address: string;
+	previousMessage: string | boolean;
+	currentStepNumber = 0;
 
 	constructor({
-		scene,
 		logger,
-		markupController,
 		contactsRepository,
 		usersRepository,
 		cartRepository,
-		markup,
-	}: IStartSceneControllerProps) {
-		super({ scene, logger, usersRepository });
-		this.markupController = markupController;
-		this.markup = markup;
+	}: IStartSceneControllerConstructor) {
+		const scene = new Scenes.BaseScene<IMyContext>(SCENES_NAMES.START);
+		super({ logger, usersRepository, scene });
 		this.contactsRepository = contactsRepository;
 		this.usersRepository = usersRepository;
 		this.cartRepository = cartRepository;
@@ -41,13 +37,38 @@ export class StartSceneController extends BaseController {
 		]);
 	}
 
+	async goToNextStep(ctx: IMyContext): Promise<void> {
+		enum startSceneStepsNames {
+			welcomeAndSetCity,
+			setAddress,
+			saveContactsAndGoNextStep,
+		}
+
+		switch (this.currentStepNumber) {
+			case startSceneStepsNames.welcomeAndSetCity: {
+				await this.showRepliesMarkup({ ctx, replies: StartSceneTemplate.getWelcomeGreeting() });
+				await this.showRepliesMarkup({ ctx, replies: StartSceneTemplate.getCityRequest() });
+				break;
+			}
+			case startSceneStepsNames.setAddress: {
+				await this.showRepliesMarkup({ ctx, replies: StartSceneTemplate.getAddressRequest() });
+				break;
+			}
+			case startSceneStepsNames.saveContactsAndGoNextStep: {
+				await this.setOrRewriteContacts(ctx);
+				await this.moveNextScene({ ctx, nextSceneName: SCENES_NAMES.CATALOG });
+				break;
+			}
+		}
+
+		this.currentStepNumber++;
+	}
+
 	private async start(ctx: IMyContext): Promise<void> {
 		try {
 			await this.init(ctx);
 
-			const currentStepName = this.getCurrentStepNameOrSetBaseName(ctx, STEPS_NAMES.SET_CITY);
-
-			await this.markupController.createMarkup(ctx, this.markup[currentStepName]());
+			await this.goToNextStep(ctx);
 		} catch (err) {
 			this.logger.error(`[StartSceneController] ${err}`);
 		}
@@ -76,17 +97,13 @@ export class StartSceneController extends BaseController {
 
 	private saveContactsTemporary(ctx: IMyContext): void {
 		if (ctx.message) {
-			// TODO Пока так решил проблему с типизацией text в message
 			const message = 'text' in ctx.message && ctx.message.text;
 
 			if (message) {
-				const currentStepName = this.getCurrentStepName(ctx);
-
-				if (currentStepName === STEPS_NAMES.SET_CITY) {
+				if (this.previousMessage === MESSAGES.SET_YOUR_CITY) {
 					this.city = message;
 				}
-
-				if (currentStepName === STEPS_NAMES.SET_ADDRESS) {
+				if (this.previousMessage === MESSAGES.SET_YOUR_ADDRESS) {
 					this.address = message;
 				}
 			}
@@ -114,33 +131,17 @@ export class StartSceneController extends BaseController {
 		}
 	}
 
+	setPreviousMessage(ctx: IMyContext): void {
+		if (ctx.message) {
+			this.previousMessage = 'text' in ctx.message && ctx.message.text;
+		}
+	}
+
 	async onAnswer(ctx: IMyContext): Promise<void> {
-		this.saveContactsTemporary(ctx);
+		await this.saveContactsTemporary(ctx);
 
-		const currentStepName = this.getCurrentStepName(ctx);
-
-		const nextStepName = await this.getNextSiblingStep({
-			ctx,
-			currentStepName,
-			stepsNames: this.markup,
-		});
-
-		if (this.getCurrentStepName(ctx) === STEPS_NAMES.SET_ADDRESS) {
-			await this.setOrRewriteContacts(ctx);
-		}
-
-		if (nextStepName) {
-			this.setNextStep(ctx, nextStepName);
-
-			await ctx.scene.reenter();
-		} else {
-			const nextSceneName = await this.getNextSceneName(ctx);
-
-			if (nextSceneName) {
-				this.setBaseStep(ctx);
-				await this.moveNextScene({ ctx, nextSceneName });
-			}
-		}
+		this.setPreviousMessage(ctx);
+		await ctx.scene.reenter();
 	}
 
 	async init(ctx: IMyContext): Promise<void> {
