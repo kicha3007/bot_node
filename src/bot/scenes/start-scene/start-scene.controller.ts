@@ -113,7 +113,6 @@ export class StartSceneController extends BaseController {
 	private async createCartIfNotCreated(ctx: IMyContext): Promise<void> {
 		const user = await this.getCurrentUser(ctx);
 
-		// TODO добавить проверку на ошибки
 		if (user) {
 			const cart = new Cart(user.id);
 

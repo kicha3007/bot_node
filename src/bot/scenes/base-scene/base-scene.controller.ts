@@ -13,6 +13,7 @@ import {
 	IHandlerAction,
 	IHandlerCustomAction,
 	IShowRepliesMarkupParams,
+	IInlineButton,
 } from './base-scene.interface';
 import {
 	IUsersRepository,
@@ -189,6 +190,38 @@ export abstract class BaseController {
 			}
 		}
 	}
+	// TODO после вынести в интерфейс
+	protected generateInlineButtons({ items }: { items: IInlineButton[][] }) {
+		const buttonsGroup = items.map((innerButtons) => {
+			return innerButtons.map((button) => ({
+				text: button.message,
+				callback_data: button.callback,
+			}));
+		});
+
+		return buttonsGroup;
+
+		/*if (type === 'photo') {*/
+		/*			if (ctx.chat?.id && image) {
+				message = await ctx.telegram.sendPhoto(ctx.chat.id, image, {
+					caption,
+					parse_mode: 'HTML',
+					reply_markup: {
+						inline_keyboard: buttonsGroup,
+					},
+				});
+			}*/
+		/*}*/
+		/*	else {
+			if (title) {
+				await ctx.reply(title, {
+					reply_markup: {
+						inline_keyboard: buttonsGroup,
+					},
+				});
+			}
+		}*/
+	}
 
 	protected bindActions(
 		actions: Array<IHandlerBase | IHandlerAction | IHandlerCustomAction>,
@@ -196,6 +229,7 @@ export abstract class BaseController {
 		for (const action of actions) {
 			const handler = action.func.bind(this);
 			if (instanceOfType<IHandlerAction>(action, 'action')) {
+				console.log('this.scene', this.scene);
 				this.scene[action.method](action.action, handler);
 			} else if (instanceOfType<IHandlerCustomAction>(action, 'customAction')) {
 				this.scene[action.method](action.customAction, handler);

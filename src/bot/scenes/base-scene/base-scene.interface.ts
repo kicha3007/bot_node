@@ -3,6 +3,7 @@ import { Scenes } from 'telegraf';
 import { ILogger } from '../../../infrastructure/logger/logger.interface';
 import { IUsersRepository } from '../../../domains/users/users.repository.interface';
 import { MARKUP_TYPES } from '../../../constants';
+import { ProductModel } from '@prisma/client';
 
 export interface IHandlerBase {
 	method: 'enter' | 'leave';
@@ -59,8 +60,22 @@ export interface ISceneReplItem {
 	message: string;
 }
 
+export interface IInlineButton {
+	message: string;
+	callback: string;
+}
+
 export interface IShowRepliesMarkupParams {
 	ctx: IMyContext;
 	replies: ISceneReplItem[];
 	type?: MARKUP_TYPES.TEXT | MARKUP_TYPES.HTML;
+}
+
+export interface IGetProductInfoParams {
+	product: ProductModel;
+}
+
+export interface IButtons {
+	title: string;
+	items: string[][];
 }
