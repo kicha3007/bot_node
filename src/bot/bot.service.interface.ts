@@ -24,6 +24,8 @@ interface ISceneInfoItem {
 export type ScenesInfoListType = [
 	{ [SCENES_NAMES.START]: ISceneInfoItem },
 	{ [SCENES_NAMES.CATALOG]: ISceneInfoItem },
+	{ [SCENES_NAMES.DETAIL]: ISceneInfoItem },
+	{ [SCENES_NAMES.CART]: ISceneInfoItem },
 ];
 
 export interface ICreateScenesProps {

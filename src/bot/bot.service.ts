@@ -5,8 +5,8 @@ import { IMyContext } from './common/common.interface';
 import { ILogger } from '../infrastructure/logger/logger.interface';
 import { ENV_NAMES, SCENES_NAMES } from '../constants';
 import { IConfigService } from '../infrastructure/config/config.service.interface';
-import { CatalogSceneController } from './scenes/catalog-scene/catalog-scene.controller'; /*
-import { DetailSceneController } from './scenes/detail-scene/detail-scene.controller';*/
+import { CatalogSceneController } from './scenes/catalog-scene/catalog-scene.controller';
+import { DetailSceneController } from './scenes/detail-scene/detail-scene.controller';
 import { StartSceneController } from './scenes/start-scene/start-scene.controller';
 import { IPrismaService } from '../infrastructure/database/prisma.service.interface';
 import { ContactsRepository } from '../domains/contacts/contacts.repository';
@@ -16,7 +16,7 @@ import { CartRepository } from '../domains/cart/cart.repository';
 import { CartProductRepository } from '../domains/cart/cartProduct/cartProduct.repository';
 import type { ScenesInfoListType } from './bot.service.interface';
 import { IBotService, ICreateScenesProps } from './bot.service.interface';
-/*import { CartSceneController } from './scenes/cart-scene/cart-scene.controller';*/
+import { CartSceneController } from './scenes/cart-scene/cart-scene.controller';
 
 interface IBotServiceProps {
 	logger: ILogger;
@@ -69,8 +69,7 @@ export class BotService implements IBotService {
 					},
 				},
 			},
-			// TODO пока закомментировал, так как эти сцены временно удалил
-			/*
+
 			{
 				[SCENES_NAMES.DETAIL]: {
 					SceneController: DetailSceneController,
@@ -88,7 +87,7 @@ export class BotService implements IBotService {
 					},
 					...baseRepositories,
 				},
-			},*/
+			},
 		] as ScenesInfoListType;
 
 		const scenes = this.createScenes({ scenesInfoList, logger });

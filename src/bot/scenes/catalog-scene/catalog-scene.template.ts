@@ -1,8 +1,15 @@
-import { IButtons, IGetProductInfoParams, IInlineButton } from '../base-scene/base-scene.interface';
+import {
+	IButtons,
+	ICatalogGetInlineButtonsParams,
+	IGetProductInfoParams,
+	IInlineButton,
+} from '../base-scene/base-scene.interface';
 import { MESSAGES } from '../../../constants';
 
 export class CatalogSceneTemplate {
-	static getInlineButtons({ countMessage = '' } = {}): IInlineButton[][] {
+	static getInlineButtons({
+		countMessage = '',
+	}: ICatalogGetInlineButtonsParams): IInlineButton[][] {
 		return [
 			[
 				{

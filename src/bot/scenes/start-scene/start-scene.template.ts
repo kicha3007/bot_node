@@ -5,9 +5,7 @@ export abstract class StartSceneTemplate {
 	static getWelcomeGreeting(): ISceneReplItem[] {
 		return [
 			{
-				message:
-					'Приветсвую в магазине гелевых шаров <b>GreenSharik </b>\n\n' +
-					'Все самое лучшее у нас, покупай, поторапливайся!',
+				message: MESSAGES.WELCOME,
 			},
 		];
 	}

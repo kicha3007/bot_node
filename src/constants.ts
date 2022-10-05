@@ -9,15 +9,6 @@ export enum SCENES_NAMES {
 	CART = 'CART',
 }
 
-export enum STEPS_NAMES {
-	BASE_STEP = 'BASE_STEP',
-	SET_CITY = 'SET_CITY',
-	SET_ADDRESS = 'SET_ADDRESS',
-	SET_BUTTONS = 'SET_BUTTONS',
-	EMPTY_CART = 'EMPTY_CART',
-	GO_TO_NEXT_SCENE = 'GO_TO_NEXT_SCENE',
-}
-
 export enum MESSAGES {
 	SET_YOUR_CITY = 'Введите ваш город',
 	SET_YOUR_ADDRESS = 'Введите адрес',
@@ -39,6 +30,8 @@ export enum MESSAGES {
 	EMPTY_CART = 'Корзина пуста',
 	NAVIGATION_TITLE = 'Навигация',
 	COUNT_PRODUCT_IN_LIST = 'Позиция товара в списке',
+	WELCOME = 'Приветсвую в магазине гелевых шаров <b>GreenSharik </b>\n\n' +
+		'Все самое лучшее у нас, покупай, поторапливайся!',
 }
 
 export enum MARKUP_TYPES {
@@ -47,7 +40,6 @@ export enum MARKUP_TYPES {
 }
 
 export enum PROPERTY_STORAGE_NAMES {
-	CURRENT_STEP_NAME = 'currentStepName',
 	PRODUCT_MESSAGE_ID = 'productMessageId',
 	PRODUCT_POSITION = 'productPosition',
 	PRODUCT_ID = 'productId',

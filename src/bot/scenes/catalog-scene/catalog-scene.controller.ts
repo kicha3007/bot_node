@@ -11,13 +11,13 @@ import {
 	IProductsRepository,
 } from '../../../domains/products/products.repository.interface';
 import { ICartProductRepository } from '../../../domains/cart/cartProduct/cartProduct.repository.interface';
-import { MESSAGES, SCENES_NAMES, STEPS_NAMES, PROPERTY_STORAGE_NAMES } from '../../../constants';
-import { Message } from 'telegraf/src/core/types/typegram';
+import { MESSAGES, SCENES_NAMES, PROPERTY_STORAGE_NAMES } from '../../../constants';
 import { CartProduct } from '../../../domains/cart/cartProduct/cartProduct.entity';
 import { ICartRepository } from '../../../domains/cart/cart.repository.interface';
 import { IUsersRepository } from '../../../domains/users/users.repository.interface';
 import { CatalogSceneTemplate } from './catalog-scene.template';
 import { Scenes } from 'telegraf';
+import { loopNavigation } from '../../../utils';
 
 export class CatalogSceneController extends BaseController {
 	productsRepository: IProductsRepository;
@@ -91,7 +91,7 @@ export class CatalogSceneController extends BaseController {
 					itemsLength: this.itemsLength,
 				});
 
-				const productMessageId = await this.showProductAndGetChatMessage({
+				const productMessageId = await this.showProductAndGetMessageId({
 					ctx,
 					countMessage: productPositionMessage,
 					caption: productTemplate,
@@ -122,26 +122,6 @@ export class CatalogSceneController extends BaseController {
 		}
 	}
 
-	loopNavigation({
-		nextPosition,
-		itemsLength,
-	}: {
-		nextPosition: number;
-		itemsLength: number;
-	}): number {
-		let currentPosition: number;
-
-		if (nextPosition <= 0) {
-			currentPosition = itemsLength;
-		} else if (nextPosition > itemsLength) {
-			currentPosition = 1;
-		} else {
-			currentPosition = nextPosition;
-		}
-
-		return currentPosition;
-	}
-
 	generatePositionMessage({
 		currentPosition,
 		itemsLength,
@@ -149,53 +129,29 @@ export class CatalogSceneController extends BaseController {
 		return `${currentPosition} из ${itemsLength}`;
 	}
 
-	async showProductAndGetChatMessage({
+	async showProductAndGetMessageId({
 		ctx,
 		countMessage,
 		caption,
 		image,
 		mode = 'create',
 		messageId,
-	}: IShowProductWithNavigation): Promise<string | void> {
-		let chatMessage: null | Message.PhotoMessage = null;
+	}: IShowProductWithNavigation): Promise<number | void> {
+		const buttonsGroup = this.generateInlineButtons({
+			items: CatalogSceneTemplate.getInlineButtons({ countMessage }),
+		});
 
-		if (ctx.chat?.id && image) {
-			const buttonsGroup = this.generateInlineButtons({
-				items: CatalogSceneTemplate.getInlineButtons({ countMessage }),
-			});
+		const productMessageId = this.createOrEditProductAndShow({
+			ctx,
+			mode,
+			messageId,
+			image,
+			caption,
+			buttonsGroup,
+		});
 
-			if (mode === 'create') {
-				chatMessage = await ctx.telegram.sendPhoto(ctx.chat.id, image, {
-					caption,
-					parse_mode: 'HTML',
-					reply_markup: {
-						inline_keyboard: buttonsGroup,
-					},
-				});
-			} else if (mode === 'edit' && messageId) {
-				await ctx.telegram.editMessageMedia(
-					ctx.chat.id,
-					parseInt(messageId),
-					undefined,
-					{
-						type: 'photo',
-						media: image,
-						caption,
-						parse_mode: 'HTML',
-					},
-					{
-						reply_markup: {
-							inline_keyboard: buttonsGroup,
-						},
-					},
-				);
-			}
-
-			if (chatMessage) {
-				const productMessageId = String(chatMessage.message_id);
-
-				return productMessageId;
-			}
+		if (productMessageId) {
+			return productMessageId;
 		}
 	}
 
@@ -221,7 +177,7 @@ export class CatalogSceneController extends BaseController {
 						: parseInt(currentProductPosition) + step;
 
 				if (this.itemsLength) {
-					const loopedNextProductPosition = this.loopNavigation({
+					const loopedNextProductPosition = loopNavigation({
 						nextPosition: nextProductPosition,
 						itemsLength: this.itemsLength,
 					});
@@ -253,7 +209,7 @@ export class CatalogSceneController extends BaseController {
 							property: PROPERTY_STORAGE_NAMES.PRODUCT_MESSAGE_ID,
 						});
 
-						await this.showProductAndGetChatMessage({
+						await this.showProductAndGetMessageId({
 							ctx,
 							countMessage: productPositionMessage,
 							caption: productTemplate,

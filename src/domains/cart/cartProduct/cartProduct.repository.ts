@@ -4,8 +4,8 @@ import {
 	ICartProductRepository,
 	IGetCartProductsParams,
 	IRemoveProductParams,
-	type RemoveProductReturn,
-	type UpdateProductReturn,
+	RemoveProductReturn,
+	UpdateProductReturn,
 	IUpdateProductParams,
 } from './cartProduct.repository.interface';
 import { CartProduct } from './cartProduct.entity';

@@ -15,16 +15,34 @@ export interface ICatalogSceneControllerProps {
 	usersRepository: IUsersRepository;
 }
 
-export interface IShowProductWithNavigation {
+export interface IShowProductAndGetMessageId {
 	ctx: IMyContext;
-	countMessage?: string;
+	countMessage: string;
 	caption: string;
 	image: string;
-	messageId?: string;
 	mode?: ShowProductModeType;
+	messageId?: string;
+	productSum: string;
+	productCount: number;
+	messagePay: string;
 }
 
 export interface IGeneratePositionMessageParams {
 	currentPosition: number;
 	itemsLength: number;
+}
+
+export interface IGenerateProductAmountParams {
+	count: number;
+	price: number;
+}
+
+export interface IShowProductInsideCartParams {
+	ctx: IMyContext;
+	nextPosition: number;
+	mode?: ShowProductModeType;
+}
+
+export interface IGenerateTotalAmountMessage {
+	totalAmount: number;
 }

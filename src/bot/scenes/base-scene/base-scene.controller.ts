@@ -1,25 +1,27 @@
 import { Scenes } from 'telegraf';
 import { IMyContext } from '../../common/common.interface';
 import { ILogger } from '../../../infrastructure/logger/logger.interface';
-import { MARKUP_TYPES, MESSAGES, SCENES_NAMES, STEPS_NAMES } from '../../../constants';
+import { MARKUP_TYPES, MESSAGES, SCENES_NAMES } from '../../../constants';
 import { checkHasData, instanceOfType } from '../../../utils';
 import {
 	IGetPropertyFromStorage,
 	ISavePropertyToStorage,
 	IMoveNextScene,
-	IGetNextSiblingStep,
 	IBaseControllerProps,
 	IHandlerBase,
 	IHandlerAction,
 	IHandlerCustomAction,
 	IShowRepliesMarkupParams,
-	IInlineButton,
+	IGenerateInlineButtons,
+	GenerateInlineButtonsReturnType,
+	ICreateOrEditProductAndShowParams,
 } from './base-scene.interface';
 import {
 	IUsersRepository,
 	UserFindReturn,
 } from '../../../domains/users/users.repository.interface';
 import { IActionController } from './base-scene.interface';
+import { Message } from 'telegraf/src/core/types/typegram';
 
 export abstract class BaseController {
 	protected readonly scene: Scenes.BaseScene<IMyContext>;
@@ -72,65 +74,9 @@ export abstract class BaseController {
 		}
 	};
 
-	protected setBaseStep = (ctx: IMyContext, name: string = STEPS_NAMES.BASE_STEP): void => {
-		ctx.session.currentStepName = name;
-	};
-
-	protected getCurrentStepName(ctx: IMyContext): string {
-		return (ctx.session?.currentStepName as string) || '';
-	}
-
-	protected getCurrentStepNameOrSetBaseName(ctx: IMyContext, name: string): string {
-		if (!this.getCurrentStepName(ctx)) {
-			this.setBaseStep(ctx, name);
-		}
-
-		return this.getCurrentStepName(ctx);
-	}
-
-	protected setNextStep(ctx: IMyContext, nextStep: string): void {
-		if (ctx.session.currentStepName) {
-			ctx.session.currentStepName = nextStep;
-		}
-	}
-
 	protected async moveNextScene({ ctx, nextSceneName }: IMoveNextScene): Promise<void> {
 		ctx.scene.leave();
 		await ctx.scene.enter(nextSceneName);
-	}
-
-	protected getNextSceneName = async (ctx: IMyContext): Promise<string | void> => {
-		return this.getNextSiblingStep({
-			ctx,
-			currentStepName: this.scene.id,
-			// TODO временно, позже удалить
-			stepsNames: ['START'],
-		});
-	};
-
-	protected async getNextSiblingStep({
-		currentStepName,
-		stepsNames,
-	}: IGetNextSiblingStep): Promise<string | void> {
-		try {
-			let stepNamesList: string[] = [];
-
-			if (Array.isArray(stepsNames)) {
-				stepNamesList = stepsNames;
-			} else {
-				stepNamesList = Object.keys(stepsNames);
-			}
-
-			const currentStepIndex = stepNamesList.findIndex((stepName) => stepName === currentStepName);
-
-			const countForNextStep = 1;
-			const nextStepName = stepNamesList[currentStepIndex + countForNextStep];
-
-			return nextStepName;
-		} catch (err) {
-			this.logger.error(`[getNextSiblingStep] Произошла ошибка ${err}`);
-			throw new Error();
-		}
 	}
 
 	protected getCurrentUserInfo(ctx: IMyContext): { id: number; username: string } {
@@ -149,7 +95,6 @@ export abstract class BaseController {
 				break;
 			}
 			case MESSAGES.CATALOG: {
-				this.setNextStep(ctx, STEPS_NAMES.BASE_STEP);
 				await this.moveNextScene({
 					ctx,
 					nextSceneName: SCENES_NAMES.CATALOG,
@@ -190,37 +135,60 @@ export abstract class BaseController {
 			}
 		}
 	}
-	// TODO после вынести в интерфейс
-	protected generateInlineButtons({ items }: { items: IInlineButton[][] }) {
-		const buttonsGroup = items.map((innerButtons) => {
+
+	protected generateInlineButtons({
+		items,
+	}: IGenerateInlineButtons): GenerateInlineButtonsReturnType {
+		return items.map((innerButtons) => {
 			return innerButtons.map((button) => ({
 				text: button.message,
 				callback_data: button.callback,
 			}));
 		});
+	}
 
-		return buttonsGroup;
+	async createOrEditProductAndShow({
+		ctx,
+		mode,
+		messageId,
+		image,
+		caption,
+		buttonsGroup,
+	}: ICreateOrEditProductAndShowParams): Promise<number | void> {
+		let chatMessage: null | Message.PhotoMessage = null;
 
-		/*if (type === 'photo') {*/
-		/*			if (ctx.chat?.id && image) {
-				message = await ctx.telegram.sendPhoto(ctx.chat.id, image, {
+		if (ctx.chat?.id) {
+			if (mode === 'create') {
+				chatMessage = await ctx.telegram.sendPhoto(ctx.chat.id, image, {
 					caption,
 					parse_mode: 'HTML',
 					reply_markup: {
 						inline_keyboard: buttonsGroup,
 					},
 				});
-			}*/
-		/*}*/
-		/*	else {
-			if (title) {
-				await ctx.reply(title, {
-					reply_markup: {
-						inline_keyboard: buttonsGroup,
+			} else if (mode === 'edit' && messageId) {
+				await ctx.telegram.editMessageMedia(
+					ctx.chat.id,
+					parseInt(messageId),
+					undefined,
+					{
+						type: 'photo',
+						media: image,
+						caption,
+						parse_mode: 'HTML',
 					},
-				});
+					{
+						reply_markup: {
+							inline_keyboard: buttonsGroup,
+						},
+					},
+				);
 			}
-		}*/
+
+			if (chatMessage) {
+				return chatMessage.message_id;
+			}
+		}
 	}
 
 	protected bindActions(
@@ -229,7 +197,6 @@ export abstract class BaseController {
 		for (const action of actions) {
 			const handler = action.func.bind(this);
 			if (instanceOfType<IHandlerAction>(action, 'action')) {
-				console.log('this.scene', this.scene);
 				this.scene[action.method](action.action, handler);
 			} else if (instanceOfType<IHandlerCustomAction>(action, 'customAction')) {
 				this.scene[action.method](action.customAction, handler);

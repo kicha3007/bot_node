@@ -79,3 +79,35 @@ export interface IButtons {
 	title: string;
 	items: string[][];
 }
+
+export interface ICatalogGetInlineButtonsParams {
+	countMessage?: string;
+}
+
+export interface ICartGetInlineButtonsParam {
+	countMessage: string;
+	messagePay: string;
+	productCount: string;
+	productSum: string;
+}
+export interface IGenerateInlineButtons {
+	items: IInlineButton[][];
+}
+
+interface IGenerateInlineButtonsItem {
+	text: string;
+	callback_data: string;
+}
+
+export type GenerateInlineButtonsReturnType = IGenerateInlineButtonsItem[][];
+
+export type ShowProductModeType = 'create' | 'edit';
+
+export interface ICreateOrEditProductAndShowParams {
+	ctx: IMyContext;
+	mode: ShowProductModeType;
+	messageId?: string;
+	image: string;
+	caption: string;
+	buttonsGroup: GenerateInlineButtonsReturnType;
+}
