@@ -8,13 +8,13 @@ import {
 	ISavePropertyToStorage,
 	IMoveNextScene,
 	IBaseControllerProps,
-	IHandlerBase,
 	IHandlerAction,
 	IHandlerCustomAction,
 	IShowRepliesMarkupParams,
 	IGenerateInlineButtons,
 	GenerateInlineButtonsReturnType,
 	ICreateOrEditProductAndShowParams,
+	IBindActions,
 } from './base-scene.interface';
 import {
 	IUsersRepository,
@@ -191,9 +191,7 @@ export abstract class BaseController {
 		}
 	}
 
-	protected bindActions(
-		actions: Array<IHandlerBase | IHandlerAction | IHandlerCustomAction>,
-	): void {
+	protected bindActions(actions: Array<IBindActions>): void {
 		for (const action of actions) {
 			const handler = action.func.bind(this);
 			if (instanceOfType<IHandlerAction>(action, 'action')) {

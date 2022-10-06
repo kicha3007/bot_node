@@ -111,3 +111,5 @@ export interface ICreateOrEditProductAndShowParams {
 	caption: string;
 	buttonsGroup: GenerateInlineButtonsReturnType;
 }
+
+export type IBindActions = IHandlerBase | IHandlerAction | IHandlerCustomAction;

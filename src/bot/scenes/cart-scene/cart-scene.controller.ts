@@ -109,7 +109,7 @@ export class CartSceneController extends BaseController {
 
 	async start(ctx: IMyContext): Promise<void> {
 		await this.setCartProductsLength();
-		console.log('this.cartProductsLength', this.cartProductsLength);
+
 		try {
 			if (this.isEmptyCar(this.cartProductsLength)) {
 				await this.showEmptyCart(ctx);
