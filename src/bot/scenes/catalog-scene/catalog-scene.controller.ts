@@ -1,9 +1,8 @@
 import { BaseController } from '../base-scene/base-scene.controller';
 import { IMyContext } from '../../common/common.interface';
 import {
-	ICatalogSceneControllerProps,
+	ICatalogSceneControllerParams,
 	IShowProductWithNavigation,
-	IGeneratePositionMessageParams,
 } from './catalog-scene.interface';
 import {
 	getProductsReturn,
@@ -11,34 +10,27 @@ import {
 	IProductsRepository,
 } from '../../../domains/products/products.repository.interface';
 import { ICartProductRepository } from '../../../domains/cart/cartProduct/cartProduct.repository.interface';
-import { MESSAGES, SCENES_NAMES, PROPERTY_STORAGE_NAMES } from '../../../constants';
+import { SCENES_NAMES, STORAGE_PROPS } from '../../constants';
 import { CartProduct } from '../../../domains/cart/cartProduct/cartProduct.entity';
 import { ICartRepository } from '../../../domains/cart/cart.repository.interface';
-import { IUsersRepository } from '../../../domains/users/users.repository.interface';
 import { CatalogSceneTemplate } from './catalog-scene.template';
 import { Scenes } from 'telegraf';
-import { loopNavigation } from '../../../utils';
+import { MESSAGES } from '../../constants';
+import { loopNavigation } from '../../utils';
 
 export class CatalogSceneController extends BaseController {
-	productsRepository: IProductsRepository;
-	cartProductRepository: ICartProductRepository;
-	cartRepository: ICartRepository;
-	itemsLength: number;
-	usersRepository: IUsersRepository;
+	private productsRepository: IProductsRepository;
+	private cartProductRepository: ICartProductRepository;
+	private cartRepository: ICartRepository;
 
-	constructor({
-		logger,
-		productsRepository,
-		cartProductRepository,
-		cartRepository,
-		usersRepository,
-	}: ICatalogSceneControllerProps) {
+	constructor(params: ICatalogSceneControllerParams) {
+		const { logger, productsRepository, cartProductRepository, cartRepository, usersRepository } =
+			params;
 		const scene = new Scenes.BaseScene<IMyContext>(SCENES_NAMES.CATALOG);
 		super({ scene, logger, usersRepository });
 		this.productsRepository = productsRepository;
 		this.cartProductRepository = cartProductRepository;
 		this.cartRepository = cartRepository;
-		this.usersRepository = usersRepository;
 
 		this.bindActions([
 			{ method: 'enter', func: this.start },
@@ -70,26 +62,34 @@ export class CatalogSceneController extends BaseController {
 		]);
 	}
 
-	async start(ctx: IMyContext): Promise<void> {
+	private async start(ctx: IMyContext): Promise<void> {
 		try {
 			const products = await this.getProducts();
 			const firstProduct = products[0];
 
 			if (firstProduct) {
-				this.savePropertyToStorage<number>({
-					ctx,
-					property: { [PROPERTY_STORAGE_NAMES.PRODUCT_ID]: firstProduct.id },
+				this.savePropertyToStorage(ctx, {
+					[STORAGE_PROPS.PRODUCT_ID]: firstProduct.id,
 				});
 
 				const productTemplate = CatalogSceneTemplate.getProductInfo({ product: firstProduct });
 
-				this.itemsLength = products.length;
+				this.savePropertyToStorage(ctx, {
+					[STORAGE_PROPS.CATALOG_ITEMS_LENGTH]: products.length,
+				});
+
 				const currentProductPosition = 1;
 
-				const productPositionMessage = this.generatePositionMessage({
-					currentPosition: currentProductPosition,
-					itemsLength: this.itemsLength,
-				});
+				const itemsLength = this.getPropertyFromStorage(ctx, STORAGE_PROPS.CATALOG_ITEMS_LENGTH);
+
+				if (!itemsLength) {
+					return;
+				}
+
+				const productPositionMessage = CatalogSceneTemplate.getPositionMessage(
+					currentProductPosition,
+					itemsLength,
+				);
 
 				const productMessageId = await this.showProductAndGetMessageId({
 					ctx,
@@ -99,14 +99,12 @@ export class CatalogSceneController extends BaseController {
 				});
 
 				if (productMessageId) {
-					this.savePropertyToStorage({
-						ctx,
-						property: { [PROPERTY_STORAGE_NAMES.PRODUCT_MESSAGE_ID]: productMessageId },
+					this.savePropertyToStorage(ctx, {
+						[STORAGE_PROPS.PRODUCT_MESSAGE_ID]: productMessageId,
 					});
 
-					this.savePropertyToStorage<number>({
-						ctx,
-						property: { [PROPERTY_STORAGE_NAMES.PRODUCT_POSITION]: currentProductPosition },
+					this.savePropertyToStorage(ctx, {
+						[STORAGE_PROPS.PRODUCT_POSITION]: currentProductPosition,
 					});
 				}
 
@@ -122,51 +120,47 @@ export class CatalogSceneController extends BaseController {
 		}
 	}
 
-	generatePositionMessage({
-		currentPosition,
-		itemsLength,
-	}: IGeneratePositionMessageParams): string {
-		return `${currentPosition} из ${itemsLength}`;
-	}
+	private async showProductAndGetMessageId(
+		params: IShowProductWithNavigation,
+	): Promise<number | void> {
+		const { ctx, countMessage, caption, image, mode = 'create', messageId } = params;
 
-	async showProductAndGetMessageId({
-		ctx,
-		countMessage,
-		caption,
-		image,
-		mode = 'create',
-		messageId,
-	}: IShowProductWithNavigation): Promise<number | void> {
 		const buttonsGroup = this.generateInlineButtons({
 			items: CatalogSceneTemplate.getInlineButtons({ countMessage }),
 		});
 
-		const productMessageId = this.createOrEditProductAndShow({
-			ctx,
-			mode,
-			messageId,
-			image,
-			caption,
-			buttonsGroup,
-		});
-
-		if (productMessageId) {
+		if (mode === 'create') {
+			const productMessageId = await this.createProductAndShow({
+				ctx,
+				image,
+				caption,
+				buttonsGroup,
+			});
 			return productMessageId;
+		} else if (mode === 'edit' && messageId) {
+			await this.editProductAndShow({
+				ctx,
+				messageId,
+				image,
+				caption,
+				buttonsGroup,
+			});
 		}
+		return;
 	}
 
-	async getProducts({ take, skip }: IGetProductsParams = {}): Promise<getProductsReturn> {
+	private async getProducts({ take, skip }: IGetProductsParams = {}): Promise<getProductsReturn> {
 		return this.productsRepository.getProducts({ take, skip });
 	}
 
-	getSiblingProduct(direction: 'prev' | 'next'): (ctx: IMyContext) => Promise<void> {
+	private getSiblingProduct(direction: 'prev' | 'next'): (ctx: IMyContext) => Promise<void> {
 		return async (ctx: IMyContext): Promise<void> => {
 			await ctx.answerCbQuery();
 
-			const currentProductPosition = this.getPropertyFromStorage({
+			const currentProductPosition = this.getPropertyFromStorage(
 				ctx,
-				property: PROPERTY_STORAGE_NAMES.PRODUCT_POSITION,
-			});
+				STORAGE_PROPS.PRODUCT_POSITION,
+			);
 
 			if (currentProductPosition) {
 				const step = 1;
@@ -176,82 +170,70 @@ export class CatalogSceneController extends BaseController {
 						? parseInt(currentProductPosition) - step
 						: parseInt(currentProductPosition) + step;
 
-				if (this.itemsLength) {
-					const loopedNextProductPosition = loopNavigation({
-						nextPosition: nextProductPosition,
-						itemsLength: this.itemsLength,
+				const itemsLength = this.getPropertyFromStorage(ctx, STORAGE_PROPS.CATALOG_ITEMS_LENGTH);
+
+				if (!itemsLength) {
+					return;
+				}
+
+				const loopedNextProductPosition = loopNavigation({
+					nextPosition: nextProductPosition,
+					itemsLength: parseInt(itemsLength),
+				});
+
+				const countForTake = 1;
+				const countForNormalizePosition = 1;
+
+				const products = await this.getProducts({
+					take: countForTake,
+					skip: loopedNextProductPosition - countForNormalizePosition,
+				});
+
+				const product = products[0];
+				if (product) {
+					this.savePropertyToStorage(ctx, { [STORAGE_PROPS.PRODUCT_ID]: product.id });
+
+					const productTemplate = CatalogSceneTemplate.getProductInfo({ product });
+
+					const productPositionMessage = CatalogSceneTemplate.getPositionMessage(
+						loopedNextProductPosition,
+						itemsLength,
+					);
+
+					const currentProductMessageId = this.getPropertyFromStorage(
+						ctx,
+						STORAGE_PROPS.PRODUCT_MESSAGE_ID,
+					);
+
+					await this.showProductAndGetMessageId({
+						ctx,
+						countMessage: productPositionMessage,
+						caption: productTemplate,
+						image: product.image,
+						mode: 'edit',
+						messageId: currentProductMessageId,
 					});
 
-					const countForTake = 1;
-					const countForNormalizePosition = 1;
-
-					const products = await this.getProducts({
-						take: countForTake,
-						skip: loopedNextProductPosition - countForNormalizePosition,
+					this.savePropertyToStorage(ctx, {
+						[STORAGE_PROPS.PRODUCT_POSITION]: loopedNextProductPosition,
 					});
-
-					const product = products[0];
-					if (product) {
-						this.savePropertyToStorage<number>({
-							ctx,
-							property: { [PROPERTY_STORAGE_NAMES.PRODUCT_ID]: product.id },
-						});
-
-						const productTemplate = CatalogSceneTemplate.getProductInfo({ product });
-
-						const productPositionMessage = this.generatePositionMessage({
-							currentPosition: loopedNextProductPosition,
-							itemsLength: this.itemsLength,
-						});
-
-						const currentProductMessageId = this.getPropertyFromStorage({
-							ctx,
-							property: PROPERTY_STORAGE_NAMES.PRODUCT_MESSAGE_ID,
-						});
-
-						await this.showProductAndGetMessageId({
-							ctx,
-							countMessage: productPositionMessage,
-							caption: productTemplate,
-							image: product.image,
-							mode: 'edit',
-							messageId: currentProductMessageId,
-						});
-
-						this.savePropertyToStorage<number>({
-							ctx,
-							property: { [PROPERTY_STORAGE_NAMES.PRODUCT_POSITION]: loopedNextProductPosition },
-						});
-					}
 				}
 			}
 		};
 	}
 
-	public async onAnswer(ctx: IMyContext): Promise<void> {
-		if (ctx.message) {
-			const message = 'text' in ctx.message && ctx.message.text;
-			if (message) {
-				await this.actionsController({ ctx, message });
-			}
-		}
-	}
-
-	async goToDetail(ctx: IMyContext): Promise<void> {
+	private async goToDetail(ctx: IMyContext): Promise<void> {
 		await this.moveNextScene({
 			ctx,
 			nextSceneName: SCENES_NAMES.DETAIL,
 		});
 	}
 
-	async addToCart(ctx: IMyContext): Promise<void> {
+	private async addToCart(ctx: IMyContext): Promise<void> {
 		const user = await this.getCurrentUser(ctx);
 
 		const cart = user && (await this.cartRepository.getCart({ userId: user.id }));
-		const productId = this.getPropertyFromStorage({
-			ctx,
-			property: PROPERTY_STORAGE_NAMES.PRODUCT_ID,
-		});
+		const productId = this.getPropertyFromStorage(ctx, STORAGE_PROPS.PRODUCT_ID);
 
 		if (productId && cart) {
 			const cartProduct = new CartProduct(cart.id, parseInt(productId));
@@ -261,7 +243,7 @@ export class CatalogSceneController extends BaseController {
 		await ctx.answerCbQuery(MESSAGES.ADD_TO_CART_DONE);
 	}
 
-	async onClickCountProductInList(ctx: IMyContext): Promise<void> {
+	private async onClickCountProductInList(ctx: IMyContext): Promise<void> {
 		await ctx.answerCbQuery(MESSAGES.COUNT_PRODUCT_IN_LIST);
 	}
 }

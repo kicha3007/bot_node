@@ -1,5 +1,5 @@
 import { IGetProductInfoParams, IInlineButton } from '../base-scene/base-scene.interface';
-import { MESSAGES } from '../../../constants';
+import { MESSAGES } from '../../constants';
 
 export class DetailSceneTemplate {
 	static getInlineButtons(): IInlineButton[][] {

@@ -1,61 +1,54 @@
 import { Scenes } from 'telegraf';
 import { IMyContext } from '../../common/common.interface';
 import { ILogger } from '../../../infrastructure/logger/logger.interface';
-import { MARKUP_TYPES, MESSAGES, SCENES_NAMES } from '../../../constants';
+import { MARKUP_TYPES, SCENES_NAMES } from '../../constants';
 import { checkHasData, instanceOfType } from '../../../utils';
 import {
-	IGetPropertyFromStorage,
-	ISavePropertyToStorage,
 	IMoveNextScene,
-	IBaseControllerProps,
+	IBaseControllerParams,
 	IHandlerAction,
 	IHandlerCustomAction,
 	IShowRepliesMarkupParams,
 	IGenerateInlineButtons,
 	GenerateInlineButtonsReturnType,
-	ICreateOrEditProductAndShowParams,
 	IBindActions,
+	IEditProductAndShow,
+	ICreateProductAndShowParams,
 } from './base-scene.interface';
 import {
 	IUsersRepository,
 	UserFindReturn,
 } from '../../../domains/users/users.repository.interface';
 import { IActionController } from './base-scene.interface';
-import { Message } from 'telegraf/src/core/types/typegram';
+import { MESSAGES } from '../../constants';
 
 export abstract class BaseController {
 	protected readonly scene: Scenes.BaseScene<IMyContext>;
-	logger: ILogger;
-	usersRepository: IUsersRepository;
+	protected logger: ILogger;
+	protected usersRepository: IUsersRepository;
 
-	protected constructor({ scene, logger, usersRepository }: IBaseControllerProps) {
+	protected constructor(params: IBaseControllerParams) {
+		const { scene, logger, usersRepository } = params;
+
 		this.scene = scene;
 		this.logger = logger;
-		this.usersRepository = usersRepository;
+		if (usersRepository) {
+			this.usersRepository = usersRepository;
+		}
 
 		this.bindActions([{ method: 'on', action: 'text', func: this.onAnswer }]);
 	}
 
-	async goToCart(ctx: IMyContext): Promise<void> {
-		await this.moveNextScene({
-			ctx,
-			nextSceneName: SCENES_NAMES.CART,
-		});
-	}
-
-	protected getPropertyFromStorage = ({
-		ctx,
-		property,
-	}: IGetPropertyFromStorage): string | undefined => {
+	protected getPropertyFromStorage = (ctx: IMyContext, property: string): string | undefined => {
 		try {
-			const currentProperty = ctx.session[property];
+			const currentProperty = ctx.session.mySession[property];
 
 			checkHasData({
 				data: currentProperty,
 				message: `[getPropertyFromStorage] Ошибка получения свойства ${property}`,
 			});
 
-			return currentProperty as string;
+			return currentProperty;
 		} catch (err) {
 			if (err instanceof Error) {
 				this.logger.error(err);
@@ -63,15 +56,13 @@ export abstract class BaseController {
 		}
 	};
 
-	protected savePropertyToStorage = <T extends string | number | object>({
-		ctx,
-		property,
-	}: ISavePropertyToStorage<T>): void => {
+	protected savePropertyToStorage = (
+		ctx: IMyContext,
+		property: Record<string, string | number>,
+	): void => {
 		const [[key, value]] = Object.entries(property);
 
-		if (<string>key) {
-			ctx.session[key] = value as T;
-		}
+		ctx.session.mySession[key] = String(value);
 	};
 
 	protected async moveNextScene({ ctx, nextSceneName }: IMoveNextScene): Promise<void> {
@@ -85,13 +76,17 @@ export abstract class BaseController {
 
 	protected async getCurrentUser(ctx: IMyContext): UserFindReturn {
 		const { id } = this.getCurrentUserInfo(ctx);
+
 		return this.usersRepository.find({ id });
 	}
 
-	async actionsController({ ctx, message }: IActionController): Promise<void> {
+	protected async actionsController({ ctx, message }: IActionController): Promise<void> {
 		switch (message) {
 			case MESSAGES.MY_ORDERS: {
-				await this.goToCart(ctx);
+				await this.moveNextScene({
+					ctx,
+					nextSceneName: SCENES_NAMES.CART,
+				});
 				break;
 			}
 			case MESSAGES.CATALOG: {
@@ -107,16 +102,20 @@ export abstract class BaseController {
 		}
 	}
 
+	protected getTextMessage(ctx: IMyContext): string {
+		return ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+	}
+
 	protected async onAnswer(ctx: IMyContext): Promise<void> {
 		if (ctx.message) {
-			const message = 'text' in ctx.message && ctx.message.text;
+			const message = this.getTextMessage(ctx);
 			if (message) {
 				await this.actionsController({ ctx, message });
 			}
 		}
 	}
 
-	getScene(): Scenes.BaseScene<IMyContext> {
+	protected getScene(): Scenes.BaseScene<IMyContext> {
 		return this.scene;
 	}
 
@@ -147,48 +146,45 @@ export abstract class BaseController {
 		});
 	}
 
-	async createOrEditProductAndShow({
-		ctx,
-		mode,
-		messageId,
-		image,
-		caption,
-		buttonsGroup,
-	}: ICreateOrEditProductAndShowParams): Promise<number | void> {
-		let chatMessage: null | Message.PhotoMessage = null;
-
-		if (ctx.chat?.id) {
-			if (mode === 'create') {
-				chatMessage = await ctx.telegram.sendPhoto(ctx.chat.id, image, {
-					caption,
-					parse_mode: 'HTML',
-					reply_markup: {
-						inline_keyboard: buttonsGroup,
-					},
-				});
-			} else if (mode === 'edit' && messageId) {
-				await ctx.telegram.editMessageMedia(
-					ctx.chat.id,
-					parseInt(messageId),
-					undefined,
-					{
-						type: 'photo',
-						media: image,
-						caption,
-						parse_mode: 'HTML',
-					},
-					{
-						reply_markup: {
-							inline_keyboard: buttonsGroup,
-						},
-					},
-				);
-			}
-
-			if (chatMessage) {
-				return chatMessage.message_id;
-			}
+	protected async createProductAndShow(
+		params: ICreateProductAndShowParams,
+	): Promise<number | undefined> {
+		if (!params.ctx.chat) {
+			return;
 		}
+
+		const chatMessage = await params.ctx.telegram.sendPhoto(params.ctx.chat.id, params.image, {
+			caption: params.caption,
+			parse_mode: 'HTML',
+			reply_markup: {
+				inline_keyboard: params.buttonsGroup,
+			},
+		});
+
+		return chatMessage.message_id;
+	}
+
+	protected async editProductAndShow(params: IEditProductAndShow): Promise<void> {
+		if (!params.ctx.chat) {
+			return;
+		}
+
+		await params.ctx.telegram.editMessageMedia(
+			params.ctx.chat.id,
+			parseInt(params.messageId),
+			undefined,
+			{
+				type: 'photo',
+				media: params.image,
+				caption: params.caption,
+				parse_mode: 'HTML',
+			},
+			{
+				reply_markup: {
+					inline_keyboard: params.buttonsGroup,
+				},
+			},
+		);
 	}
 
 	protected bindActions(actions: Array<IBindActions>): void {

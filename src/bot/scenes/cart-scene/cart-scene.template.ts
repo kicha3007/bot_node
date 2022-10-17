@@ -4,15 +4,14 @@ import {
 	IInlineButton,
 	ISceneReplItem,
 } from '../base-scene/base-scene.interface';
-import { MESSAGES } from '../../../constants';
+import { MESSAGES } from '../../constants';
+import { BaseSceneTemplate } from '../base-scene/base-scene.template';
+import { IGenerateTotalAmountMessage, IGetProductAmountMessage } from './cart-scene.interface';
 
-export class CartSceneTemplate {
-	static getInlineButtons({
-		countMessage = '',
-		messagePay,
-		productCount,
-		productSum,
-	}: ICartGetInlineButtonsParam): IInlineButton[][] {
+export class CartSceneTemplate extends BaseSceneTemplate {
+	static getInlineButtons(params: ICartGetInlineButtonsParam): IInlineButton[][] {
+		const { countMessage = '', messagePay, productCount, productSum } = params;
+
 		return [
 			[
 				{
@@ -60,5 +59,15 @@ export class CartSceneTemplate {
 
 	static getCartProductInfo({ product }: IGetProductInfoParams): string {
 		return `<b>${product.title}</b>\n\nЦена: <i>${product.price}</i>`;
+	}
+
+	static getProductAmountMessage({ count, price }: IGetProductAmountMessage): string {
+		const result = count * price;
+
+		return `${price} * ${count} = ${result}`;
+	}
+
+	static getTotalAmountMessage({ totalAmount }: IGenerateTotalAmountMessage): string {
+		return `Оформить - ${totalAmount} руб.`;
 	}
 }

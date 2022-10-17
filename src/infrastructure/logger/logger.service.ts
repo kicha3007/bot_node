@@ -2,7 +2,7 @@ import { Logger } from 'tslog';
 import { ILogger } from './logger.interface';
 
 export class LoggerService implements ILogger {
-	public logger: Logger;
+	readonly logger: Logger;
 
 	constructor() {
 		this.logger = new Logger({
@@ -12,15 +12,15 @@ export class LoggerService implements ILogger {
 		});
 	}
 
-	log(...args: unknown[]): void {
+	public log(...args: unknown[]): void {
 		this.logger.info(...args);
 	}
 
-	error(...args: unknown[]): void {
+	public error(...args: unknown[]): void {
 		this.logger.error(...args);
 	}
 
-	warn(...args: unknown[]): void {
+	public warn(...args: unknown[]): void {
 		this.logger.warn(...args);
 	}
 }

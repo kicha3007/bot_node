@@ -10,7 +10,7 @@ export interface IGetProductsParams {
 	};
 }
 
-export type getProductsReturn = Promise<ProductModel[] | []>;
+export type getProductsReturn = Promise<ProductModel[]>;
 
 export type getProductReturn = Promise<ProductModel | null>;
 

@@ -6,10 +6,9 @@ import { ICartRepository } from '../../../domains/cart/cart.repository.interface
 import { IUsersRepository } from '../../../domains/users/users.repository.interface';
 import { ShowProductModeType } from '../base-scene/base-scene.interface';
 
-export interface ICatalogSceneControllerProps {
+export interface ICatalogSceneControllerParams {
 	logger: ILogger;
 	productsRepository: IProductsRepository;
-	sceneNames: string[];
 	cartProductRepository: ICartProductRepository;
 	cartRepository: ICartRepository;
 	usersRepository: IUsersRepository;
@@ -22,9 +21,4 @@ export interface IShowProductWithNavigation {
 	image: string;
 	messageId?: string;
 	mode?: ShowProductModeType;
-}
-
-export interface IGeneratePositionMessageParams {
-	currentPosition: number;
-	itemsLength: number;
 }

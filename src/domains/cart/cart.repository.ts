@@ -10,7 +10,7 @@ import { IPrismaService } from '../../infrastructure/database/prisma.service.int
 export class CartRepository implements ICartRepository {
 	constructor(private prismaService: IPrismaService) {}
 
-	create({ userId }: Cart): CartCreateReturn {
+	public create({ userId }: Cart): CartCreateReturn {
 		return this.prismaService.client.cartModel.upsert({
 			where: {
 				userId,
@@ -22,7 +22,7 @@ export class CartRepository implements ICartRepository {
 		});
 	}
 
-	async getCart(params: GetCartParams): GetCartReturn {
+	public async getCart(params: GetCartParams): GetCartReturn {
 		return this.prismaService.client.cartModel.findUnique({
 			where: { userId: params.userId },
 		});

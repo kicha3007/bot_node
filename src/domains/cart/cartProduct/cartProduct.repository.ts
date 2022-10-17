@@ -14,7 +14,7 @@ import { IPrismaService } from '../../../infrastructure/database/prisma.service.
 export class CartProductRepository implements ICartProductRepository {
 	constructor(private prismaService: IPrismaService) {}
 
-	add(params: CartProduct): AddCartProductReturn {
+	public add(params: CartProduct): AddCartProductReturn {
 		const { cartId, productId } = params;
 
 		return this.prismaService.client.cartProductModel.upsert({
@@ -32,7 +32,7 @@ export class CartProductRepository implements ICartProductRepository {
 		});
 	}
 
-	getProducts(params: IGetCartProductsParams = {}): getCartProductsReturn {
+	public getProducts(params: IGetCartProductsParams = {}): getCartProductsReturn {
 		const { skip, take } = params;
 
 		if (isNaN(<number>skip)) {
@@ -47,7 +47,7 @@ export class CartProductRepository implements ICartProductRepository {
 		}
 	}
 
-	removeProduct(params: IRemoveProductParams): RemoveProductReturn {
+	public removeProduct(params: IRemoveProductParams): RemoveProductReturn {
 		const { productId } = params;
 
 		return this.prismaService.client.cartProductModel.delete({
@@ -57,7 +57,7 @@ export class CartProductRepository implements ICartProductRepository {
 		});
 	}
 
-	updateProduct(params: IUpdateProductParams): UpdateProductReturn {
+	public updateProduct(params: IUpdateProductParams): UpdateProductReturn {
 		const { productId, productCount } = params;
 
 		return this.prismaService.client.cartProductModel.update({

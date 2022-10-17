@@ -10,7 +10,7 @@ import {
 export class UsersRepository implements IUsersRepository {
 	constructor(private prismaService: IPrismaService) {}
 
-	find({ id }: UserFindParams): UserFindReturn {
+	public find({ id }: UserFindParams): UserFindReturn {
 		return this.prismaService.client.userModel.findFirst({
 			where: {
 				id,
@@ -18,7 +18,7 @@ export class UsersRepository implements IUsersRepository {
 		});
 	}
 
-	create({ name, id }: UserCreateParams): UserCreateReturn {
+	public create({ name, id }: UserCreateParams): UserCreateReturn {
 		return this.prismaService.client.userModel.create({
 			data: {
 				name,

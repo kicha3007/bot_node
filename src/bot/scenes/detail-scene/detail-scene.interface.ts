@@ -3,11 +3,10 @@ import { ILogger } from '../../../infrastructure/logger/logger.interface';
 import { IProductsRepository } from '../../../domains/products/products.repository.interface';
 import { IUsersRepository } from '../../../domains/users/users.repository.interface';
 
-export interface IDetailSceneProps {
+export interface IDetailSceneParams {
 	logger: ILogger;
 	productsRepository: IProductsRepository;
 	usersRepository: IUsersRepository;
-	sceneNames: string[];
 }
 
 export interface IShowDetailProduct {

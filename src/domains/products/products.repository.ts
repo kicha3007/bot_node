@@ -10,7 +10,7 @@ import { IPrismaService } from '../../infrastructure/database/prisma.service.int
 export class ProductsRepository implements IProductsRepository {
 	constructor(private prismaService: IPrismaService) {}
 
-	async getProducts(params: IGetProductsParams = {}): getProductsReturn {
+	public async getProducts(params: IGetProductsParams = {}): getProductsReturn {
 		const { skip, take, where } = params;
 
 		if (isNaN(<number>skip)) {
@@ -26,7 +26,7 @@ export class ProductsRepository implements IProductsRepository {
 		}
 	}
 
-	async getProduct(params: IGetProductParams = {}): getProductReturn {
+	public async getProduct(params: IGetProductParams = {}): getProductReturn {
 		return this.prismaService.client.productModel.findUnique({
 			where: { id: params.id },
 		});

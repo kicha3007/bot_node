@@ -4,9 +4,10 @@ import {
 	IGetProductInfoParams,
 	IInlineButton,
 } from '../base-scene/base-scene.interface';
-import { MESSAGES } from '../../../constants';
+import { MESSAGES } from '../../constants';
+import { BaseSceneTemplate } from '../base-scene/base-scene.template';
 
-export class CatalogSceneTemplate {
+export class CatalogSceneTemplate extends BaseSceneTemplate {
 	static getInlineButtons({
 		countMessage = '',
 	}: ICatalogGetInlineButtonsParams): IInlineButton[][] {

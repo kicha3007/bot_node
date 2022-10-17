@@ -2,7 +2,7 @@ import { IMyContext } from '../../common/common.interface';
 import { Scenes } from 'telegraf';
 import { ILogger } from '../../../infrastructure/logger/logger.interface';
 import { IUsersRepository } from '../../../domains/users/users.repository.interface';
-import { MARKUP_TYPES } from '../../../constants';
+import { MARKUP_TYPES } from '../../constants';
 import { ProductModel } from '@prisma/client';
 
 export interface IHandlerBase {
@@ -22,33 +22,15 @@ export interface IHandlerCustomAction {
 	func: (ctx: IMyContext) => void | Promise<void>;
 }
 
-export interface IBaseControllerProps {
+export interface IBaseControllerParams {
 	scene: Scenes.BaseScene<IMyContext>;
 	logger: ILogger;
-	usersRepository: IUsersRepository;
-}
-
-export interface IGetNextSiblingStep {
-	currentStepName: string;
-	stepsNames: string[] | object;
-	ctx: IMyContext;
+	usersRepository?: IUsersRepository;
 }
 
 export interface IMoveNextScene {
 	ctx: IMyContext;
 	nextSceneName: string;
-}
-
-type SavePropertyToStorageProperty<T> = Record<string, T>;
-
-export interface ISavePropertyToStorage<T> {
-	ctx: IMyContext;
-	property: SavePropertyToStorageProperty<T>;
-}
-
-export interface IGetPropertyFromStorage {
-	ctx: IMyContext;
-	property: string;
 }
 
 export interface IActionController {
@@ -103,10 +85,16 @@ export type GenerateInlineButtonsReturnType = IGenerateInlineButtonsItem[][];
 
 export type ShowProductModeType = 'create' | 'edit';
 
-export interface ICreateOrEditProductAndShowParams {
+export interface ICreateProductAndShowParams {
 	ctx: IMyContext;
-	mode: ShowProductModeType;
-	messageId?: string;
+	image: string;
+	caption: string;
+	buttonsGroup: GenerateInlineButtonsReturnType;
+}
+
+export interface IEditProductAndShow {
+	ctx: IMyContext;
+	messageId: string;
 	image: string;
 	caption: string;
 	buttonsGroup: GenerateInlineButtonsReturnType;

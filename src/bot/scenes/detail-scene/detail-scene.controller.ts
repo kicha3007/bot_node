@@ -1,27 +1,24 @@
 import { BaseController } from '../base-scene/base-scene.controller';
 import { IMyContext } from '../../common/common.interface';
-import { IDetailSceneProps, IShowDetailProduct } from './detail-scene.interface';
+import { IDetailSceneParams, IShowDetailProduct } from './detail-scene.interface';
 import {
 	getProductReturn,
 	IGetProductParams,
 	IProductsRepository,
 } from '../../../domains/products/products.repository.interface';
-import { SCENES_NAMES, MESSAGES, PROPERTY_STORAGE_NAMES } from '../../../constants';
-import { IUsersRepository } from '../../../domains/users/users.repository.interface';
+import { SCENES_NAMES, STORAGE_PROPS } from '../../constants';
 import { DetailSceneTemplate } from './detail-scene.template';
 import { Scenes } from 'telegraf';
+import { MESSAGES } from '../../constants';
 
 export class DetailSceneController extends BaseController {
-	productsRepository: IProductsRepository;
-	sceneNames: string[];
-	usersRepository: IUsersRepository;
+	private productsRepository: IProductsRepository;
 
-	constructor({ logger, productsRepository, sceneNames, usersRepository }: IDetailSceneProps) {
+	constructor(params: IDetailSceneParams) {
+		const { logger, productsRepository } = params;
 		const scene = new Scenes.BaseScene<IMyContext>(SCENES_NAMES.DETAIL);
-		super({ scene, logger, usersRepository });
+		super({ scene, logger });
 		this.productsRepository = productsRepository;
-		this.sceneNames = sceneNames;
-		this.usersRepository = usersRepository;
 
 		this.bindActions([
 			{ method: 'enter', func: this.start },
@@ -33,17 +30,14 @@ export class DetailSceneController extends BaseController {
 		]);
 	}
 
-	async start(ctx: IMyContext): Promise<void> {
+	private async start(ctx: IMyContext): Promise<void> {
 		try {
-			const currentProductMessageId = this.getPropertyFromStorage({
+			const currentProductMessageId = this.getPropertyFromStorage(
 				ctx,
-				property: PROPERTY_STORAGE_NAMES.PRODUCT_MESSAGE_ID,
-			});
+				STORAGE_PROPS.PRODUCT_MESSAGE_ID,
+			);
 
-			const currentProductId = this.getPropertyFromStorage({
-				ctx,
-				property: PROPERTY_STORAGE_NAMES.PRODUCT_ID,
-			});
+			const currentProductId = this.getPropertyFromStorage(ctx, STORAGE_PROPS.PRODUCT_ID);
 
 			if (currentProductId) {
 				const product = await this.getProduct({ id: parseInt(currentProductId) });
@@ -63,7 +57,12 @@ export class DetailSceneController extends BaseController {
 		}
 	}
 
-	async showDetailProduct({ ctx, caption, image, messageId }: IShowDetailProduct): Promise<void> {
+	private async showDetailProduct({
+		ctx,
+		caption,
+		image,
+		messageId,
+	}: IShowDetailProduct): Promise<void> {
 		const buttonsGroup = this.generateInlineButtons({
 			items: DetailSceneTemplate.getInlineButtons(),
 		});
@@ -88,11 +87,11 @@ export class DetailSceneController extends BaseController {
 		}
 	}
 
-	async getProduct({ id }: IGetProductParams = {}): Promise<getProductReturn> {
+	private async getProduct({ id }: IGetProductParams = {}): Promise<getProductReturn> {
 		return this.productsRepository.getProduct({ id });
 	}
 
-	async backToCatalog(ctx: IMyContext): Promise<void> {
+	private async backToCatalog(ctx: IMyContext): Promise<void> {
 		await this.moveNextScene({
 			ctx,
 			nextSceneName: SCENES_NAMES.CATALOG,

@@ -2,15 +2,15 @@ import { IConfigService } from './config.service.interface';
 import { config, DotenvConfigOutput, DotenvParseOutput } from 'dotenv';
 import { ILogger } from '../logger/logger.interface';
 
-interface IConfigServiceProps {
+interface IConfigServiceParams {
 	logger: ILogger;
 }
 
 export class ConfigService implements IConfigService {
 	private logger: ILogger;
-	private config: DotenvParseOutput;
+	private readonly config: DotenvParseOutput;
 
-	constructor({ logger }: IConfigServiceProps) {
+	constructor({ logger }: IConfigServiceParams) {
 		this.logger = logger;
 		const result: DotenvConfigOutput = config();
 		if (result.error) {
@@ -21,7 +21,7 @@ export class ConfigService implements IConfigService {
 		}
 	}
 
-	get(key: string): string {
+	public get(key: string): string {
 		return this.config[key];
 	}
 }

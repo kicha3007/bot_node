@@ -8,7 +8,7 @@ export interface IGetCartProductsParams {
 	take?: number;
 }
 
-export type getCartProductsReturn = Promise<CartProductModel[] | []>;
+export type getCartProductsReturn = Promise<CartProductModel[]>;
 
 export interface IRemoveProductParams {
 	productId: number;
