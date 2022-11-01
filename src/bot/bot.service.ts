@@ -90,8 +90,7 @@ export class BotService implements IBotService {
 		this.stage = new Scenes.Stage<IMyContext>(scenes);
 	}
 
-	// TODO Разобраться с модификатормаи доступа
-	createScenes({ scenesInfoList }: ICreateScenesParams): Scenes.BaseScene<IMyContext>[] {
+	public createScenes({ scenesInfoList }: ICreateScenesParams): Scenes.BaseScene<IMyContext>[] {
 		return scenesInfoList.map((sceneInfo) => {
 			const [currentSceneInfo] = Object.values(sceneInfo);
 

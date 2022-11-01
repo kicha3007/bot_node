@@ -1,10 +1,9 @@
-import { IMyContext } from '../../common/common.interface';
 import { ILogger } from '../../../infrastructure/logger/logger.interface';
 import { IProductsRepository } from '../../../domains/products/products.repository.interface';
 import { ICartProductRepository } from '../../../domains/cart/cartProduct/cartProduct.repository.interface';
 import { ICartRepository } from '../../../domains/cart/cart.repository.interface';
 import { IUsersRepository } from '../../../domains/users/users.repository.interface';
-import { ShowProductModeType } from '../base-scene/base-scene.interface';
+import { IMyContext } from '../../common/common.interface';
 
 export interface ICatalogSceneControllerParams {
 	logger: ILogger;
@@ -14,11 +13,17 @@ export interface ICatalogSceneControllerParams {
 	usersRepository: IUsersRepository;
 }
 
-export interface IShowProductWithNavigation {
+export interface IShowEditedCatalogProduct {
 	ctx: IMyContext;
-	countMessage?: string;
+	countMessage: string;
 	caption: string;
 	image: string;
-	messageId?: string;
-	mode?: ShowProductModeType;
+	messageId: string;
+}
+
+export interface IShowCreatedCatalogProduct {
+	ctx: IMyContext;
+	image: string;
+	caption: string;
+	countMessage: string;
 }

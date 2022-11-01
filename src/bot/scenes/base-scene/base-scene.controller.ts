@@ -12,8 +12,8 @@ import {
 	IGenerateInlineButtons,
 	GenerateInlineButtonsReturnType,
 	IBindActions,
-	IEditProductAndShow,
-	ICreateProductAndShowParams,
+	IEditProduct,
+	ICreateProduct,
 } from './base-scene.interface';
 import {
 	IUsersRepository,
@@ -146,11 +146,9 @@ export abstract class BaseController {
 		});
 	}
 
-	protected async createProductAndShow(
-		params: ICreateProductAndShowParams,
-	): Promise<number | undefined> {
+	protected async createProduct(params: ICreateProduct): Promise<number> {
 		if (!params.ctx.chat) {
-			return;
+			throw new Error('[createProduct] Ошибка создания продукта');
 		}
 
 		const chatMessage = await params.ctx.telegram.sendPhoto(params.ctx.chat.id, params.image, {
@@ -164,9 +162,9 @@ export abstract class BaseController {
 		return chatMessage.message_id;
 	}
 
-	protected async editProductAndShow(params: IEditProductAndShow): Promise<void> {
+	protected async editProduct(params: IEditProduct): Promise<void> {
 		if (!params.ctx.chat) {
-			return;
+			throw new Error('[editProduct] Ошибка редактирования продукта');
 		}
 
 		await params.ctx.telegram.editMessageMedia(

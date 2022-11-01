@@ -2,7 +2,8 @@ import { BaseController } from '../base-scene/base-scene.controller';
 import { IMyContext } from '../../common/common.interface';
 import {
 	ICatalogSceneControllerParams,
-	IShowProductAndGetMessageId,
+	IShowCreatedCartProductAndGetMessageId,
+	IShowEditedCartProduct,
 	IShowProductInsideCartParams,
 } from './cart-scene.interface';
 import {
@@ -153,20 +154,9 @@ export class CartSceneController extends BaseController {
 		return totalAmount;
 	}
 
-	private async showProductAndGetMessageId(
-		params: IShowProductAndGetMessageId,
-	): Promise<number | void> {
-		const {
-			ctx,
-			countMessage,
-			caption,
-			image,
-			mode = 'create',
-			messageId,
-			productSum,
-			productCount,
-			messagePay,
-		} = params;
+	private async showEditedCartProduct(params: IShowEditedCartProduct): Promise<void> {
+		const { ctx, countMessage, caption, image, messageId, productSum, messagePay, productCount } =
+			params;
 
 		const buttonsGroup = this.generateInlineButtons({
 			items: CartSceneTemplate.getInlineButtons({
@@ -177,24 +167,37 @@ export class CartSceneController extends BaseController {
 			}),
 		});
 
-		if (mode === 'create') {
-			const productMessageId = await this.createProductAndShow({
-				ctx,
-				image,
-				caption,
-				buttonsGroup,
-			});
-			return productMessageId;
-		} else if (mode === 'edit' && messageId) {
-			await this.editProductAndShow({
-				ctx,
-				messageId,
-				image,
-				caption,
-				buttonsGroup,
-			});
-		}
-		return;
+		await this.editProduct({
+			ctx,
+			messageId,
+			image,
+			caption,
+			buttonsGroup,
+		});
+	}
+
+	private async showCreatedCartProductAndGetMessageId(
+		params: IShowCreatedCartProductAndGetMessageId,
+	): Promise<number> {
+		const { ctx, countMessage, caption, image, productSum, productCount, messagePay } = params;
+
+		const buttonsGroup = this.generateInlineButtons({
+			items: CartSceneTemplate.getInlineButtons({
+				countMessage,
+				productSum,
+				productCount: String(productCount),
+				messagePay,
+			}),
+		});
+
+		const productMessageId = await this.createProduct({
+			ctx,
+			image,
+			caption,
+			buttonsGroup,
+		});
+
+		return productMessageId;
 	}
 
 	private async showProductInsideCart({
@@ -251,19 +254,32 @@ export class CartSceneController extends BaseController {
 
 		const productChatMessageId = this.getPropertyFromStorage(ctx, STORAGE_PROPS.PRODUCT_MESSAGE_ID);
 
-		const productMessageId = await this.showProductAndGetMessageId({
-			ctx,
-			countMessage: productPositionMessage,
-			caption: CartSceneTemplate.getCartProductInfo({ product }),
-			image: product.image,
-			productSum,
-			productCount: cartProduct.productCount,
-			messagePay: totalAmountMessage,
-			mode,
-			messageId: String(productChatMessageId),
-		});
+		if (mode === 'edit') {
+			await this.showEditedCartProduct({
+				ctx,
+				countMessage: productPositionMessage,
+				caption: CartSceneTemplate.getCartProductInfo({ product }),
+				image: product.image,
+				productSum,
+				productCount: cartProduct.productCount,
+				messagePay: totalAmountMessage,
+				messageId: String(productChatMessageId),
+			});
+		} else {
+			const productMessageId = await this.showCreatedCartProductAndGetMessageId({
+				ctx,
+				countMessage: productPositionMessage,
+				caption: CartSceneTemplate.getCartProductInfo({ product }),
+				image: product.image,
+				productSum,
+				productCount: cartProduct.productCount,
+				messagePay: totalAmountMessage,
+				messageId: String(productChatMessageId),
+			});
 
-		if (productMessageId) {
+			if (!productMessageId) {
+				return;
+			}
 			this.savePropertyToStorage(ctx, {
 				[STORAGE_PROPS.PRODUCT_MESSAGE_ID]: String(productMessageId),
 			});

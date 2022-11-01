@@ -14,18 +14,6 @@ export interface ICatalogSceneControllerParams {
 	usersRepository: IUsersRepository;
 }
 
-export interface IShowProductAndGetMessageId {
-	ctx: IMyContext;
-	countMessage: string;
-	caption: string;
-	image: string;
-	mode?: ShowProductModeType;
-	messageId?: string;
-	productSum: string;
-	productCount: number;
-	messagePay: string;
-}
-
 export interface IGetProductAmountMessage {
 	count: number;
 	price: number;
@@ -39,4 +27,26 @@ export interface IShowProductInsideCartParams {
 
 export interface IGenerateTotalAmountMessage {
 	totalAmount: number;
+}
+
+export interface IShowEditedCartProduct {
+	ctx: IMyContext;
+	countMessage: string;
+	caption: string;
+	image: string;
+	messageId: string;
+	productSum: string;
+	messagePay: string;
+	productCount: number;
+}
+
+export interface IShowCreatedCartProductAndGetMessageId {
+	ctx: IMyContext;
+	image: string;
+	caption: string;
+	countMessage: string;
+	messageId: string;
+	productSum: string;
+	productCount: number;
+	messagePay: string;
 }

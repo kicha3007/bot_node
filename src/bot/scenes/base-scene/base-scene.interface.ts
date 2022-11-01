@@ -85,14 +85,14 @@ export type GenerateInlineButtonsReturnType = IGenerateInlineButtonsItem[][];
 
 export type ShowProductModeType = 'create' | 'edit';
 
-export interface ICreateProductAndShowParams {
+export interface ICreateProduct {
 	ctx: IMyContext;
 	image: string;
 	caption: string;
 	buttonsGroup: GenerateInlineButtonsReturnType;
 }
 
-export interface IEditProductAndShow {
+export interface IEditProduct {
 	ctx: IMyContext;
 	messageId: string;
 	image: string;

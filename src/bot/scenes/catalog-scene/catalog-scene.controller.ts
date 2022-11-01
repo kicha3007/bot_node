@@ -2,7 +2,8 @@ import { BaseController } from '../base-scene/base-scene.controller';
 import { IMyContext } from '../../common/common.interface';
 import {
 	ICatalogSceneControllerParams,
-	IShowProductWithNavigation,
+	IShowCreatedCatalogProduct,
+	IShowEditedCatalogProduct,
 } from './catalog-scene.interface';
 import {
 	getProductsReturn,
@@ -66,87 +67,96 @@ export class CatalogSceneController extends BaseController {
 		try {
 			const products = await this.getProducts();
 			const firstProduct = products[0];
-
-			if (firstProduct) {
-				this.savePropertyToStorage(ctx, {
-					[STORAGE_PROPS.PRODUCT_ID]: firstProduct.id,
-				});
-
-				const productTemplate = CatalogSceneTemplate.getProductInfo({ product: firstProduct });
-
-				this.savePropertyToStorage(ctx, {
-					[STORAGE_PROPS.CATALOG_ITEMS_LENGTH]: products.length,
-				});
-
-				const currentProductPosition = 1;
-
-				const itemsLength = this.getPropertyFromStorage(ctx, STORAGE_PROPS.CATALOG_ITEMS_LENGTH);
-
-				if (!itemsLength) {
-					return;
-				}
-
-				const productPositionMessage = CatalogSceneTemplate.getPositionMessage(
-					currentProductPosition,
-					itemsLength,
-				);
-
-				const productMessageId = await this.showProductAndGetMessageId({
-					ctx,
-					countMessage: productPositionMessage,
-					caption: productTemplate,
-					image: firstProduct.image,
-				});
-
-				if (productMessageId) {
-					this.savePropertyToStorage(ctx, {
-						[STORAGE_PROPS.PRODUCT_MESSAGE_ID]: productMessageId,
-					});
-
-					this.savePropertyToStorage(ctx, {
-						[STORAGE_PROPS.PRODUCT_POSITION]: currentProductPosition,
-					});
-				}
-
-				const buttons = CatalogSceneTemplate.getButtons();
-				await ctx.reply(buttons.title, {
-					reply_markup: {
-						keyboard: buttons.items,
-					},
-				});
+			if (!firstProduct) {
+				return;
 			}
+
+			this.savePropertyToStorage(ctx, {
+				[STORAGE_PROPS.PRODUCT_ID]: firstProduct.id,
+			});
+
+			const productTemplate = CatalogSceneTemplate.getProductInfo({ product: firstProduct });
+
+			this.savePropertyToStorage(ctx, {
+				[STORAGE_PROPS.CATALOG_ITEMS_LENGTH]: products.length,
+			});
+
+			const currentProductPosition = 1;
+
+			const itemsLength = this.getPropertyFromStorage(ctx, STORAGE_PROPS.CATALOG_ITEMS_LENGTH);
+
+			if (!itemsLength) {
+				return;
+			}
+
+			const productPositionMessage = CatalogSceneTemplate.getPositionMessage(
+				currentProductPosition,
+				itemsLength,
+			);
+
+			const productMessageId = await this.showCreatedCatalogProductAndGetMessageId({
+				ctx,
+				countMessage: productPositionMessage,
+				caption: productTemplate,
+				image: firstProduct.image,
+			});
+
+			if (!productMessageId) {
+				return;
+			}
+
+			this.savePropertyToStorage(ctx, {
+				[STORAGE_PROPS.PRODUCT_MESSAGE_ID]: productMessageId,
+			});
+
+			this.savePropertyToStorage(ctx, {
+				[STORAGE_PROPS.PRODUCT_POSITION]: currentProductPosition,
+			});
+
+			const buttons = CatalogSceneTemplate.getButtons();
+			await ctx.reply(buttons.title, {
+				reply_markup: {
+					keyboard: buttons.items,
+				},
+			});
 		} catch (err) {
 			this.logger.error(`[CatalogSceneController] ${err}`);
 		}
 	}
 
-	private async showProductAndGetMessageId(
-		params: IShowProductWithNavigation,
-	): Promise<number | void> {
-		const { ctx, countMessage, caption, image, mode = 'create', messageId } = params;
+	private async showEditedCatalogProduct(params: IShowEditedCatalogProduct): Promise<void> {
+		const { ctx, countMessage, caption, image, messageId } = params;
 
 		const buttonsGroup = this.generateInlineButtons({
 			items: CatalogSceneTemplate.getInlineButtons({ countMessage }),
 		});
 
-		if (mode === 'create') {
-			const productMessageId = await this.createProductAndShow({
-				ctx,
-				image,
-				caption,
-				buttonsGroup,
-			});
-			return productMessageId;
-		} else if (mode === 'edit' && messageId) {
-			await this.editProductAndShow({
-				ctx,
-				messageId,
-				image,
-				caption,
-				buttonsGroup,
-			});
-		}
-		return;
+		await this.editProduct({
+			ctx,
+			messageId,
+			image,
+			caption,
+			buttonsGroup,
+		});
+	}
+
+	private async showCreatedCatalogProductAndGetMessageId(
+		params: IShowCreatedCatalogProduct,
+	): Promise<number> {
+		const { ctx, countMessage, caption, image } = params;
+
+		const buttonsGroup = this.generateInlineButtons({
+			items: CatalogSceneTemplate.getInlineButtons({ countMessage }),
+		});
+
+		const productMessageId = await this.createProduct({
+			ctx,
+			image,
+			caption,
+			buttonsGroup,
+		});
+
+		return productMessageId;
 	}
 
 	private async getProducts({ take, skip }: IGetProductsParams = {}): Promise<getProductsReturn> {
@@ -162,63 +172,70 @@ export class CatalogSceneController extends BaseController {
 				STORAGE_PROPS.PRODUCT_POSITION,
 			);
 
-			if (currentProductPosition) {
-				const step = 1;
-
-				const nextProductPosition =
-					direction === 'prev'
-						? parseInt(currentProductPosition) - step
-						: parseInt(currentProductPosition) + step;
-
-				const itemsLength = this.getPropertyFromStorage(ctx, STORAGE_PROPS.CATALOG_ITEMS_LENGTH);
-
-				if (!itemsLength) {
-					return;
-				}
-
-				const loopedNextProductPosition = loopNavigation({
-					nextPosition: nextProductPosition,
-					itemsLength: parseInt(itemsLength),
-				});
-
-				const countForTake = 1;
-				const countForNormalizePosition = 1;
-
-				const products = await this.getProducts({
-					take: countForTake,
-					skip: loopedNextProductPosition - countForNormalizePosition,
-				});
-
-				const product = products[0];
-				if (product) {
-					this.savePropertyToStorage(ctx, { [STORAGE_PROPS.PRODUCT_ID]: product.id });
-
-					const productTemplate = CatalogSceneTemplate.getProductInfo({ product });
-
-					const productPositionMessage = CatalogSceneTemplate.getPositionMessage(
-						loopedNextProductPosition,
-						itemsLength,
-					);
-
-					const currentProductMessageId = this.getPropertyFromStorage(
-						ctx,
-						STORAGE_PROPS.PRODUCT_MESSAGE_ID,
-					);
-
-					await this.showProductAndGetMessageId({
-						ctx,
-						countMessage: productPositionMessage,
-						caption: productTemplate,
-						image: product.image,
-						mode: 'edit',
-						messageId: currentProductMessageId,
-					});
-
-					this.savePropertyToStorage(ctx, {
-						[STORAGE_PROPS.PRODUCT_POSITION]: loopedNextProductPosition,
-					});
-				}
+			if (!currentProductPosition) {
+				return;
 			}
+
+			const step = 1;
+
+			const nextProductPosition =
+				direction === 'prev'
+					? parseInt(currentProductPosition) - step
+					: parseInt(currentProductPosition) + step;
+
+			const itemsLength = this.getPropertyFromStorage(ctx, STORAGE_PROPS.CATALOG_ITEMS_LENGTH);
+
+			if (!itemsLength) {
+				return;
+			}
+
+			const loopedNextProductPosition = loopNavigation({
+				nextPosition: nextProductPosition,
+				itemsLength: parseInt(itemsLength),
+			});
+
+			const countForTake = 1;
+			const countForNormalizePosition = 1;
+
+			const products = await this.getProducts({
+				take: countForTake,
+				skip: loopedNextProductPosition - countForNormalizePosition,
+			});
+
+			const product = products[0];
+			if (!product) {
+				return;
+			}
+
+			this.savePropertyToStorage(ctx, { [STORAGE_PROPS.PRODUCT_ID]: product.id });
+
+			const productTemplate = CatalogSceneTemplate.getProductInfo({ product });
+
+			const productPositionMessage = CatalogSceneTemplate.getPositionMessage(
+				loopedNextProductPosition,
+				itemsLength,
+			);
+
+			const currentProductMessageId = this.getPropertyFromStorage(
+				ctx,
+				STORAGE_PROPS.PRODUCT_MESSAGE_ID,
+			);
+
+			if (!currentProductMessageId) {
+				return;
+			}
+
+			await this.showEditedCatalogProduct({
+				ctx,
+				countMessage: productPositionMessage,
+				caption: productTemplate,
+				image: product.image,
+				messageId: currentProductMessageId,
+			});
+
+			this.savePropertyToStorage(ctx, {
+				[STORAGE_PROPS.PRODUCT_POSITION]: loopedNextProductPosition,
+			});
 		};
 	}
 
