@@ -1,13 +1,11 @@
 import { Context, Scenes } from 'telegraf';
 
 interface IMySessionScene extends Scenes.SceneSessionData {
-	myProps: string;
+	myParams: Record<string, string | undefined>;
 }
 
 interface IMySession extends Scenes.SceneSession<IMySessionScene> {
-	currentStepName: string;
-	city: string;
-	address: string;
+	mySession: Record<string, string | undefined>;
 }
 
 export interface IMyContext extends Context {

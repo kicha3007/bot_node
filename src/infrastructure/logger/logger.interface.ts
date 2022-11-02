@@ -1,4 +1,4 @@
-export interface ILogger {
+export class ILogger {
 	logger: unknown;
 	log: (...args: unknown[]) => void;
 	error: (...args: unknown[]) => void;

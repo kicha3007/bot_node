@@ -1,42 +1,53 @@
 import { BaseController } from '../base-scene/base-scene.controller';
 import { IMyContext } from '../../common/common.interface';
-import { IMarkupController } from '../../markup/markup.controller.interface';
-import { IContactsRepository } from '../../../domains/contacts/contacts.repository.interface';
-import { IMarkupSteps } from '../../markup/markup.service.inteface';
-import { IUsersRepository } from '../../../domains/users/users.repository.interface';
-import { STEPS_NAMES, CONTACTS_PROPS } from '../../../constants';
-import { Contact } from '../../../domains/contacts/contact.entity';
-import { IStartSceneControllerProps } from './start-scene.interface';
+import { SCENES_NAMES } from '../../constants';
+import { Cart } from '../../../domains/cart/cart.entity';
+import { IStartSceneControllerConstructor } from './start-scene.interface';
+import { ICartRepository } from '../../../domains/cart/cart.repository.interface';
+import { Scenes } from 'telegraf';
+import { StartSceneTemplate } from './start-scene.template';
 
 export class StartSceneController extends BaseController {
-	markupController: IMarkupController;
-	contactsRepository: IContactsRepository;
-	markup: IMarkupSteps;
-	sceneNames: string[];
-	usersRepository: IUsersRepository;
+	private cartRepository: ICartRepository;
 
-	constructor({
-		scene,
-		logger,
-		markupController,
-		contactsRepository,
-		usersRepository,
-		markup,
-		sceneNames,
-	}: IStartSceneControllerProps) {
-		super({ scene, logger, sceneNames });
-		this.markupController = markupController;
-		this.markup = markup;
-		this.contactsRepository = contactsRepository;
-		this.usersRepository = usersRepository;
+	constructor(params: IStartSceneControllerConstructor) {
+		const { logger, usersRepository, cartRepository } = params;
+
+		const scene = new Scenes.BaseScene<IMyContext>(SCENES_NAMES.START);
+		super({ logger, usersRepository, scene });
+		this.cartRepository = cartRepository;
 
 		this.bindActions([
 			{ method: 'enter', func: this.start },
-			{ method: 'on', command: 'text', func: this.onAnswer },
+			{ method: 'on', action: 'text', func: this.onAnswer },
 		]);
 	}
 
-	private async createUserIfNotCreate(ctx: IMyContext): Promise<void> {
+	private async start(ctx: IMyContext): Promise<void> {
+		try {
+			await this.init(ctx);
+			await this.showGreetingAndGoNext(ctx);
+		} catch (err) {
+			this.logger.error(`[StartSceneController] ${err}`);
+		}
+	}
+
+	private async showGreetingAndGoNext(ctx: IMyContext): Promise<void> {
+		await this.showRepliesMarkup({ ctx, replies: StartSceneTemplate.getWelcomeGreeting() });
+		await this.moveNextScene({ ctx, nextSceneName: SCENES_NAMES.ADDRESS });
+	}
+
+	private async createCartIfNotCreated(ctx: IMyContext): Promise<void> {
+		const user = await this.getCurrentUser(ctx);
+
+		if (user) {
+			const cart = new Cart(user.id);
+
+			await this.cartRepository.create(cart);
+		}
+	}
+
+	private async createUserIfNotCreated(ctx: IMyContext): Promise<void> {
 		const { id, username } = this.getCurrentUserInfo(ctx);
 
 		const hasUser = Boolean(await this.usersRepository.find({ id }));
@@ -46,91 +57,8 @@ export class StartSceneController extends BaseController {
 		}
 	}
 
-	private async start(ctx: IMyContext): Promise<void> {
-		try {
-			const currentStepName = this.getCurrentStepNameOrSetBaseName(ctx, STEPS_NAMES.SET_CITY);
-
-			this.markupController.createMarkup(ctx, this.markup[currentStepName]());
-		} catch (err) {
-			this.logger.error(`[StartSceneController] ${err}`);
-		}
-	}
-
-	private async setOrRewriteContacts(ctx: IMyContext): Promise<void> {
-		await this.createUserIfNotCreate(ctx);
-		const city = this.getPropertyFromStorage({ ctx, property: CONTACTS_PROPS.CITY });
-		const address = this.getPropertyFromStorage({ ctx, property: CONTACTS_PROPS.ADDRESS });
-
-		const { id } = this.getCurrentUserInfo(ctx);
-		const userFromDatabase = await this.usersRepository.find({ id });
-
-		try {
-			if (city && address && userFromDatabase) {
-				const { id: userId } = userFromDatabase;
-
-				const hasContactAlready = Boolean(await this.contactsRepository.find({ userId }));
-
-				if (hasContactAlready) {
-					await this.contactsRepository.delete({ userId });
-				}
-
-				const contact = new Contact(city, address, userId);
-				await this.contactsRepository.create(contact);
-			}
-		} catch (err) {
-			this.logger.error(`[setContacts] ${err}`);
-		}
-	}
-
-	private saveContactsToStorage(ctx: IMyContext): void {
-		if (ctx.message) {
-			// TODO Пока так решил проблему с типизацией text в message
-			const message = 'text' in ctx.message && ctx.message.text;
-
-			if (message) {
-				const currentStepName = this.getCurrentStepName(ctx);
-
-				if (currentStepName === STEPS_NAMES.SET_CITY) {
-					this.savePropertyToStorage({ ctx, property: { [CONTACTS_PROPS.CITY]: message } });
-				}
-
-				if (currentStepName === STEPS_NAMES.SET_ADDRESS) {
-					this.savePropertyToStorage({ ctx, property: { [CONTACTS_PROPS.ADDRESS]: message } });
-				}
-			}
-		}
-	}
-
-	private async onAnswer(ctx: IMyContext): Promise<void> {
-		this.saveContactsToStorage(ctx);
-
-		this.scene.on('text', () => {
-			console.log('ffd');
-		});
-
-		const currentStepName = this.getCurrentStepName(ctx);
-
-		const nextStepName = await this.getNextSiblingStep({
-			ctx,
-			currentStepName,
-			stepsNames: this.markup,
-		});
-
-		if (this.getCurrentStepName(ctx) === STEPS_NAMES.SET_ADDRESS) {
-			await this.setOrRewriteContacts(ctx);
-		}
-
-		if (nextStepName) {
-			this.setNextStep(ctx, nextStepName);
-
-			await ctx.scene.reenter();
-		} else {
-			const nextSceneName = await this.getNextSceneName(ctx);
-
-			if (nextSceneName) {
-				this.setBaseStep(ctx);
-				await this.moveNextScene({ ctx, nextSceneName });
-			}
-		}
+	private async init(ctx: IMyContext): Promise<void> {
+		await this.createUserIfNotCreated(ctx);
+		await this.createCartIfNotCreated(ctx);
 	}
 }

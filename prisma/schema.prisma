@@ -45,6 +45,7 @@ model CartProductModel {
     id          Int             @id @default(autoincrement())
     cart        CartModel       @relation(fields: [cartId], references: [id], onDelete: Cascade)
     cartId      Int
+    productCount Int
     product     ProductModel    @relation(fields: [productId], references: [id], onDelete: Cascade)
     productId   Int             @unique
     createdAt   DateTime        @default(now())
@@ -53,7 +54,6 @@ model CartProductModel {
 
 model ContactModel {
     id          Int             @id @default(autoincrement())
-    city        String
     address     String
     createdAt   DateTime        @default(now())
     updatedAt   DateTime        @updatedAt

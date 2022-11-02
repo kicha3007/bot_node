@@ -1,62 +1,266 @@
 import { BaseController } from '../base-scene/base-scene.controller';
 import { IMyContext } from '../../common/common.interface';
-import { IMarkupController } from '../../markup/markup.controller.interface';
-import { IMarkupSteps } from '../../markup/markup.service.inteface';
-import { IProductsRepository } from '../../../domains/products/products.repository.interface';
-import { ICatalogSceneControllerProps } from './catalog-scene.interface';
+import {
+	ICatalogSceneControllerParams,
+	IShowCreatedCatalogProduct,
+	IShowEditedCatalogProduct,
+} from './catalog-scene.interface';
+import {
+	getProductsReturn,
+	IGetProductsParams,
+	IProductsRepository,
+} from '../../../domains/products/products.repository.interface';
+import { ICartProductRepository } from '../../../domains/cart/cartProduct/cartProduct.repository.interface';
+import { SCENES_NAMES, STORAGE_PROPS } from '../../constants';
+import { CartProduct } from '../../../domains/cart/cartProduct/cartProduct.entity';
+import { ICartRepository } from '../../../domains/cart/cart.repository.interface';
+import { CatalogSceneTemplate } from './catalog-scene.template';
+import { Scenes } from 'telegraf';
+import { MESSAGES } from '../../constants';
+import { loopNavigation } from '../../utils';
 
 export class CatalogSceneController extends BaseController {
-	markupController: IMarkupController;
-	markup: IMarkupSteps;
-	productsRepository: IProductsRepository;
-	sceneNames: string[];
+	private productsRepository: IProductsRepository;
+	private cartProductRepository: ICartProductRepository;
+	private cartRepository: ICartRepository;
 
-	constructor({
-		scene,
-		logger,
-		markupController,
-		markup,
-		productsRepository,
-		sceneNames,
-	}: ICatalogSceneControllerProps) {
-		super({ scene, logger, sceneNames });
-		this.markupController = markupController;
-		this.markup = markup;
+	constructor(params: ICatalogSceneControllerParams) {
+		const { logger, productsRepository, cartProductRepository, cartRepository, usersRepository } =
+			params;
+		const scene = new Scenes.BaseScene<IMyContext>(SCENES_NAMES.CATALOG);
+		super({ scene, logger, usersRepository });
 		this.productsRepository = productsRepository;
-		this.sceneNames = sceneNames;
+		this.cartProductRepository = cartProductRepository;
+		this.cartRepository = cartRepository;
 
 		this.bindActions([
 			{ method: 'enter', func: this.start },
-			{ method: 'on', command: 'text', func: this.onAnswer },
+			{
+				method: 'action',
+				customAction: MESSAGES.NEXT,
+				func: this.getSiblingProduct('next'),
+			},
+			{
+				method: 'action',
+				customAction: MESSAGES.PREV,
+				func: this.getSiblingProduct('prev'),
+			},
+			{
+				method: 'action',
+				customAction: MESSAGES.DETAIL_DESCRIPTION,
+				func: this.goToDetail,
+			},
+			{
+				method: 'action',
+				customAction: MESSAGES.ADD_TO_CART,
+				func: this.addToCart,
+			},
+			{
+				method: 'action',
+				customAction: MESSAGES.COUNT_PRODUCT_IN_LIST,
+				func: this.onClickCountProductInList,
+			},
 		]);
 	}
 
-	public async start(ctx: IMyContext): Promise<void> {
+	private async start(ctx: IMyContext): Promise<void> {
 		try {
-			const currentStepName = this.getCurrentStepName(ctx);
+			const products = await this.getProducts();
+			const firstProduct = products[0];
+			if (!firstProduct) {
+				return;
+			}
 
-			await this.showProduct(ctx);
+			this.savePropertyToStorage(ctx, {
+				[STORAGE_PROPS.PRODUCT_ID]: firstProduct.id,
+			});
 
-			this.markupController.createMarkup(ctx, this.markup[currentStepName]());
+			const productTemplate = CatalogSceneTemplate.getProductInfo({ product: firstProduct });
+
+			this.savePropertyToStorage(ctx, {
+				[STORAGE_PROPS.CATALOG_ITEMS_LENGTH]: products.length,
+			});
+
+			const currentProductPosition = 1;
+
+			const itemsLength = this.getPropertyFromStorage(ctx, STORAGE_PROPS.CATALOG_ITEMS_LENGTH);
+
+			if (!itemsLength) {
+				return;
+			}
+
+			const productPositionMessage = CatalogSceneTemplate.getPositionMessage(
+				currentProductPosition,
+				itemsLength,
+			);
+
+			const productMessageId = await this.showCreatedCatalogProductAndGetMessageId({
+				ctx,
+				countMessage: productPositionMessage,
+				caption: productTemplate,
+				image: firstProduct.image,
+			});
+
+			if (!productMessageId) {
+				return;
+			}
+
+			this.savePropertyToStorage(ctx, {
+				[STORAGE_PROPS.PRODUCT_MESSAGE_ID]: productMessageId,
+			});
+
+			this.savePropertyToStorage(ctx, {
+				[STORAGE_PROPS.PRODUCT_POSITION]: currentProductPosition,
+			});
+
+			const buttons = CatalogSceneTemplate.getButtons();
+			await ctx.reply(buttons.title, {
+				reply_markup: {
+					keyboard: buttons.items,
+				},
+			});
 		} catch (err) {
 			this.logger.error(`[CatalogSceneController] ${err}`);
 		}
 	}
 
-	private async showProduct(ctx: IMyContext): Promise<void> {
-		const product = await this.productsRepository.getProduct();
+	private async showEditedCatalogProduct(params: IShowEditedCatalogProduct): Promise<void> {
+		const { ctx, countMessage, caption, image, messageId } = params;
 
-		if (product && ctx.chat?.id) {
-			const viewProduct = `<b>${product.title}</b>\n\nЦена:<i>${product.price}</i>\n\n${product.description}`;
+		const buttonsGroup = this.generateInlineButtons({
+			items: CatalogSceneTemplate.getInlineButtons({ countMessage }),
+		});
 
-			await ctx.telegram.sendPhoto(ctx.chat.id, product.image, {
-				caption: viewProduct,
-				parse_mode: 'HTML',
-			});
-		}
+		await this.editProduct({
+			ctx,
+			messageId,
+			image,
+			caption,
+			buttonsGroup,
+		});
 	}
 
-	public async onAnswer(ctx: IMyContext): Promise<void> {
-		ctx.reply('Нам пока не нужны эти данные. Спасибо.');
+	private async showCreatedCatalogProductAndGetMessageId(
+		params: IShowCreatedCatalogProduct,
+	): Promise<number> {
+		const { ctx, countMessage, caption, image } = params;
+
+		const buttonsGroup = this.generateInlineButtons({
+			items: CatalogSceneTemplate.getInlineButtons({ countMessage }),
+		});
+
+		const productMessageId = await this.createProduct({
+			ctx,
+			image,
+			caption,
+			buttonsGroup,
+		});
+
+		return productMessageId;
+	}
+
+	private async getProducts({ take, skip }: IGetProductsParams = {}): Promise<getProductsReturn> {
+		return this.productsRepository.getProducts({ take, skip });
+	}
+
+	private getSiblingProduct(direction: 'prev' | 'next'): (ctx: IMyContext) => Promise<void> {
+		return async (ctx: IMyContext): Promise<void> => {
+			await ctx.answerCbQuery();
+
+			const currentProductPosition = this.getPropertyFromStorage(
+				ctx,
+				STORAGE_PROPS.PRODUCT_POSITION,
+			);
+
+			if (!currentProductPosition) {
+				return;
+			}
+
+			const step = 1;
+
+			const nextProductPosition =
+				direction === 'prev'
+					? parseInt(currentProductPosition) - step
+					: parseInt(currentProductPosition) + step;
+
+			const itemsLength = this.getPropertyFromStorage(ctx, STORAGE_PROPS.CATALOG_ITEMS_LENGTH);
+
+			if (!itemsLength) {
+				return;
+			}
+
+			const loopedNextProductPosition = loopNavigation({
+				nextPosition: nextProductPosition,
+				itemsLength: parseInt(itemsLength),
+			});
+
+			const countForTake = 1;
+			const countForNormalizePosition = 1;
+
+			const products = await this.getProducts({
+				take: countForTake,
+				skip: loopedNextProductPosition - countForNormalizePosition,
+			});
+
+			const product = products[0];
+			if (!product) {
+				return;
+			}
+
+			this.savePropertyToStorage(ctx, { [STORAGE_PROPS.PRODUCT_ID]: product.id });
+
+			const productTemplate = CatalogSceneTemplate.getProductInfo({ product });
+
+			const productPositionMessage = CatalogSceneTemplate.getPositionMessage(
+				loopedNextProductPosition,
+				itemsLength,
+			);
+
+			const currentProductMessageId = this.getPropertyFromStorage(
+				ctx,
+				STORAGE_PROPS.PRODUCT_MESSAGE_ID,
+			);
+
+			if (!currentProductMessageId) {
+				return;
+			}
+
+			await this.showEditedCatalogProduct({
+				ctx,
+				countMessage: productPositionMessage,
+				caption: productTemplate,
+				image: product.image,
+				messageId: currentProductMessageId,
+			});
+
+			this.savePropertyToStorage(ctx, {
+				[STORAGE_PROPS.PRODUCT_POSITION]: loopedNextProductPosition,
+			});
+		};
+	}
+
+	private async goToDetail(ctx: IMyContext): Promise<void> {
+		await this.moveNextScene({
+			ctx,
+			nextSceneName: SCENES_NAMES.DETAIL,
+		});
+	}
+
+	private async addToCart(ctx: IMyContext): Promise<void> {
+		const user = await this.getCurrentUser(ctx);
+
+		const cart = user && (await this.cartRepository.getCart({ userId: user.id }));
+		const productId = this.getPropertyFromStorage(ctx, STORAGE_PROPS.PRODUCT_ID);
+
+		if (productId && cart) {
+			const cartProduct = new CartProduct(cart.id, parseInt(productId));
+			await this.cartProductRepository.add(cartProduct);
+		}
+
+		await ctx.answerCbQuery(MESSAGES.ADD_TO_CART_DONE);
+	}
+
+	private async onClickCountProductInList(ctx: IMyContext): Promise<void> {
+		await ctx.answerCbQuery(MESSAGES.COUNT_PRODUCT_IN_LIST);
 	}
 }

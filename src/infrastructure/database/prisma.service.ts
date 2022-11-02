@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { IPrismaService } from './prisma.service.interface';
 import { ILogger } from '../logger/logger.interface';
 
-interface IPrismaServiceProps {
+interface IPrismaServiceParams {
 	logger: ILogger;
 }
 
@@ -10,12 +10,12 @@ export class PrismaService implements IPrismaService {
 	client: PrismaClient;
 	logger: ILogger;
 
-	constructor({ logger }: IPrismaServiceProps) {
+	constructor({ logger }: IPrismaServiceParams) {
 		this.logger = logger;
 		this.client = new PrismaClient();
 	}
 
-	async connect(): Promise<void> {
+	public async connect(): Promise<void> {
 		try {
 			await this.client.$connect();
 			this.logger.log('[PrismaService] Успешо подключились к базе данных');

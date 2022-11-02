@@ -6,17 +6,16 @@ import { IPrismaService } from '../../infrastructure/database/prisma.service.int
 export class ContactsRepository implements IContactsRepository {
 	constructor(private prismaService: IPrismaService) {}
 
-	create({ city, address, userId }: Contact): Promise<ContactModel> {
+	public create({ address, userId }: Contact): Promise<ContactModel> {
 		return this.prismaService.client.contactModel.create({
 			data: {
-				city,
 				address,
 				userId,
 			},
 		});
 	}
 
-	find({ userId }: Pick<Contact, 'userId'>): Promise<ContactModel | null> {
+	public find({ userId }: Pick<Contact, 'userId'>): Promise<ContactModel | null> {
 		return this.prismaService.client.contactModel.findFirst({
 			where: {
 				userId,
@@ -24,7 +23,7 @@ export class ContactsRepository implements IContactsRepository {
 		});
 	}
 
-	delete({ userId }: Pick<Contact, 'userId'>): Promise<ContactModel | null> {
+	public delete({ userId }: Pick<Contact, 'userId'>): Promise<ContactModel | null> {
 		return this.prismaService.client.contactModel.delete({
 			where: {
 				userId,

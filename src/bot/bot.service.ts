@@ -3,80 +3,103 @@ import { Telegraf, Scenes } from 'telegraf';
 import LocalSession from 'telegraf-session-local';
 import { IMyContext } from './common/common.interface';
 import { ILogger } from '../infrastructure/logger/logger.interface';
-import { ENV_NAMES, SCENES_NAMES } from '../constants';
-import { IConfigService } from '../infrastructure/config/config.service.interface';
-import { MarkupController } from './markup/markup.controller';
+import { SCENES_NAMES } from './constants';
 import { CatalogSceneController } from './scenes/catalog-scene/catalog-scene.controller';
+import { DetailSceneController } from './scenes/detail-scene/detail-scene.controller';
 import { StartSceneController } from './scenes/start-scene/start-scene.controller';
-import { IPrismaService } from '../infrastructure/database/prisma.service.interface';
-import { MarkupService } from './markup/markup.service';
-import { ContactsRepository } from '../domains/contacts/contacts.repository';
-import { ProductsRepository } from '../domains/products/products.repository';
-import { UsersRepository } from '../domains/users/users.repository';
-import { IBotService, ICreateScenesProps } from './bot.service.interface';
-
-interface IBotServiceProps {
-	logger: ILogger;
-	configService: IConfigService;
-	prismaService: IPrismaService;
-}
+import type { ScenesInfoListType, IBotServiceParams } from './bot.service.interface';
+import { IBotService, ICreateScenesParams } from './bot.service.interface';
+import { CartSceneController } from './scenes/cart-scene/cart-scene.controller';
+import { ENV_NAMES } from '../constants';
+import { AddressSceneController } from './scenes/address-scene/address-scene.controller';
 
 export class BotService implements IBotService {
-	bot: Telegraf<IMyContext>;
-	logger: ILogger;
-	stage: Scenes.Stage<IMyContext>;
+	private bot: Telegraf<IMyContext>;
+	private readonly logger: ILogger;
+	private stage: Scenes.Stage<IMyContext>;
 
-	constructor({ logger, configService, prismaService }: IBotServiceProps) {
+	constructor({ logger, configService, repositories }: IBotServiceParams) {
 		const token = configService.get(ENV_NAMES.TOKEN);
 
 		if (!token) {
 			throw new Error('Не задан token');
 		}
 
+		const {
+			contactsRepository,
+			cartRepository,
+			usersRepository,
+			productsRepository,
+			cartProductRepository,
+		} = repositories;
+
 		this.bot = new Telegraf<IMyContext>(token);
 		this.logger = logger;
 
-		const scenesInfo = [
+		const scenesInfoList: ScenesInfoListType = [
 			{
 				[SCENES_NAMES.START]: {
-					SceneController: StartSceneController,
+					sceneController: StartSceneController,
 					repository: {
-						contactsRepository: new ContactsRepository(prismaService),
-						usersRepository: new UsersRepository(prismaService),
+						contactsRepository,
+						cartRepository,
+						usersRepository,
 					},
 				},
 			},
 			{
 				[SCENES_NAMES.CATALOG]: {
-					SceneController: CatalogSceneController,
-					repository: { productsRepository: new ProductsRepository(prismaService) },
+					sceneController: CatalogSceneController,
+					repository: {
+						productsRepository,
+						cartProductRepository,
+						cartRepository,
+						usersRepository,
+					},
+				},
+			},
+
+			{
+				[SCENES_NAMES.DETAIL]: {
+					sceneController: DetailSceneController,
+					repository: { productsRepository },
+				},
+			},
+			{
+				[SCENES_NAMES.CART]: {
+					sceneController: CartSceneController,
+					repository: {
+						cartProductRepository,
+						cartRepository,
+						productsRepository,
+					},
+				},
+			},
+			{
+				[SCENES_NAMES.ADDRESS]: {
+					sceneController: AddressSceneController,
+					repository: {
+						contactsRepository,
+						usersRepository,
+					},
 				},
 			},
 		];
 
-		const scenes = this.createScenes({ scenes: scenesInfo, logger });
-
-		this.stage = new Scenes.Stage<IMyContext>([...scenes]);
+		const scenes = this.createScenes({ scenesInfoList });
+		this.stage = new Scenes.Stage<IMyContext>(scenes);
 	}
 
-	createScenes({ scenes, logger }: ICreateScenesProps): Scenes.BaseScene<IMyContext>[] {
-		const markupController = new MarkupController();
-		const markupService = new MarkupService();
-		const sceneNames = markupService.getSceneNames();
+	public createScenes({ scenesInfoList }: ICreateScenesParams): Scenes.BaseScene<IMyContext>[] {
+		return scenesInfoList.map((sceneInfo) => {
+			const [currentSceneInfo] = Object.values(sceneInfo);
 
-		return scenes.map((sceneInfo) => {
-			const [[sceneName, sceneValue]] = Object.entries(sceneInfo);
-			const scene = new Scenes.BaseScene<IMyContext>(sceneName);
-			new sceneValue.SceneController({
-				logger,
-				markupController: markupController,
-				markup: markupService.getCurrentMarkup(sceneName),
-				scene,
-				sceneNames,
-				...sceneValue.repository,
+			const currentController = new currentSceneInfo.sceneController({
+				logger: this.logger,
+				...currentSceneInfo.repository,
 			});
 
-			return scene;
+			return currentController.getScene();
 		});
 	}
 
@@ -85,6 +108,7 @@ export class BotService implements IBotService {
 		this.bot.use(this.stage.middleware());
 
 		this.bot.command('start', (ctx) => {
+			ctx.session.mySession = {};
 			ctx.scene.enter(SCENES_NAMES.START);
 		});
 
